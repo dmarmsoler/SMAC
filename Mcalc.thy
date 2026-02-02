@@ -763,8 +763,8 @@ qed
 subsection \<open>Write Memory\<close>
 
 corollary write_read_0:
-  assumes "Memory.write cd m0 = (l, m)"
-  shows "aread m l = Some cd"
+  assumes "Memory.write a m = (l, m')"
+  shows "aread m' l = Some a"
   using Memory.write_read assms by blast
 
 lemma write_read_1:
