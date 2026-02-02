@@ -919,27 +919,27 @@ qed
 subsection \<open>Memory Check\<close>
 
 lemma disjoined_range_write_1:
-  assumes "Memory.write cd m = (x1, x2)"
-    shows "adisjoined x2 (the (arange x2 x1))"
+  assumes "Memory.write a m = (l, m')"
+    shows "adisjoined m' (the (arange m' l))"
 proof -
-  from assms(1) obtain L where "arange x2 x1 = Some L" using range_range_write_1 by blast
+  from assms(1) obtain L where "arange m' l = Some L" using range_range_write_1 by blast
   then show ?thesis using write_adisjoined[OF assms(1)]
     by (metis bot_fset.rep_eq empty_iff option.sel a_data.range_def)
 qed
 
 lemma disjoined_range_write_2:
-  assumes "Memory.write cd m0 = (l1, m1)"
-      and "arange m0 l0 = Some (the (arange m0 l0))"
-      and "adisjoined m0 (the (arange m0 l0))"
-    shows "adisjoined m1 (the (arange m1 l0))"
+  assumes "Memory.write a m = (l2, m')"
+      and "arange m l1 = Some (the (arange m l1))"
+      and "adisjoined m (the (arange m l1))"
+    shows "adisjoined m' (the (arange m' l1))"
 proof -
-  from assms(1) have "prefix m0 m1"
+  from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
-  moreover have "fset (the (arange m0 l0)) \<subseteq> loc m0" using a_data.range_subs2 assms(2) by blast
-  ultimately have "adisjoined m1 (the (arange m0 l0))" using a_data.disjoined_prefix[OF _ _ assms(3)] assms(2)
+  moreover have "fset (the (arange m l1)) \<subseteq> loc m" using a_data.range_subs2 assms(2) by blast
+  ultimately have "adisjoined m' (the (arange m l1))" using a_data.disjoined_prefix[OF _ _ assms(3)] assms(2)
     by (metis a_data.range_def a_data.range_prefix)
   then show ?thesis
-    by (metis \<open>prefix m0 m1\<close> assms(2) data.range_prefix arange_def)
+    by (metis \<open>prefix m m'\<close> assms(2) data.range_prefix arange_def)
 qed
 
 lemma disjoined_mupdate_value:
