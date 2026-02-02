@@ -768,10 +768,9 @@ corollary write_read_0:
   using Memory.write_read assms by blast
 
 lemma write_read_1:
-  assumes "Memory.write a0 m = (l1, m')"
-      and "arange m l0 = Some (the (arange m l0))"
-      and "aread m l0 = Some a1"
-    shows "aread m' l0 = Some a1"
+  assumes "Memory.write a1 m = (l1, m')"
+      and "aread m l0 = Some a0"
+    shows "aread m' l0 = Some a0"
   using assms
   by (metis write_sprefix a_data.read_append snd_conv sprefix_prefix)
 
