@@ -762,20 +762,20 @@ qed
 
 subsection \<open>Write Memory\<close>
 
-corollary write_read:
+corollary write_read_0:
   assumes "Memory.write cd m0 = (l, m)"
   shows "aread m l = Some cd"
   using Memory.write_read assms by blast
 
-subsection \<open>Read Memory\<close>
-
-lemma read_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-      and "aread m0 l1 = Some cd'"
-    shows "aread m1 l1 = Some cd'"
+lemma write_read_1:
+  assumes "Memory.write a0 m = (l0, m')"
+      and "arange m l1 = Some (the (arange m l1))"
+      and "aread m l1 = Some a1"
+    shows "aread m' l1 = Some a1"
   using assms
   by (metis write_sprefix a_data.read_append snd_conv sprefix_prefix)
+
+subsection \<open>Read Memory\<close>
 
 lemma read_mupdate_value:
   assumes "mupdate xs (l0, mdata.Value v, m0) = Some m1"
@@ -1156,8 +1156,8 @@ method mc uses lookup
   | (erule range_some_mupdate_value)
   | (erule range_some_mupdate_1, assumption, assumption)
   | (erule range_some_mupdate_2)
-  | (erule write_read)
-  | (erule read_write)
+  | (erule write_read_0)
+  | (erule write_read_1)
   | (erule read_mupdate_value)
   | (erule read_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule read_mupdate_2)
