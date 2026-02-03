@@ -63,9 +63,9 @@ lemma (in Contract) example:
   apply (erule disjoined_range_write_1)
   apply (erule range_range_disj_write)
   apply (erule range_range_write_1)
+  apply (erule write_read_2)
   apply (erule write_read_1)
-  apply (erule write_read_0)
-  apply (erule write_read_0)
+  apply (erule write_read_1)
   by (simp add:alookup.simps)
 
 lemma (in Contract) example_short:

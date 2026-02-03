@@ -125,16 +125,16 @@ lemma aliasing2:
 subsection \<open>Safe List Lookup\<close>
 
 lemma nth_some:
-  assumes "mupdate xs (l0, v, m0) = Some m1"
-      and "m0 $ l2 = Some aa"
-      and "the (mlookup m0 xs l0) \<noteq> l2"
-    shows "m1 $ l2 = Some aa"
+  assumes "mupdate is (l1, v, m) = Some m'"
+      and "m $ l2 = Some v"
+      and "the (mlookup m is l1) \<noteq> l2"
+    shows "m' $ l2 = Some v"
 proof -
   obtain l
-    where 0: "mlookup m0 xs l0 = Some l"
-    and m'_def: "m1 = m0[l:=v]"
+    where 0: "mlookup m is l1 = Some l"
+    and m'_def: "m' = m[l:=v]"
     using mvalue_update_obtain[OF assms(1)] by auto
-  then have "m0 $ l2 = m1 $ l2" using assms(3)
+  then have "m $ l2 = m' $ l2" using assms(3)
     by (metis length_list_update nth_list_update_neq nth_safe_def option.sel)
   then show ?thesis using assms(2) by argo
 qed
@@ -273,7 +273,7 @@ proof -
   moreover
   from L'_def L''_def 1 have "\<forall>l|\<in>|the (locations m is4 l4). m $ l = m' $ l"
    using assms(1,7) 0 m'_def
-   by (metis funionI2 length_list_update nth_safe_def nth_some option.sel)
+   by (metis funionI2 length_list_update nth_list_update_neq nth_safe_def option.sel)
   moreover from assms(6) have "\<forall>l|\<in>|the (locations m is1 l1). m $ l = m' $ l"
     using m'_def `l < length m` unfolding nth_safe_def apply (auto)
     by (metis "0" nth_list_update_neq option.sel)
@@ -357,7 +357,8 @@ proof -
       and "m' = m[l:=v]"
     using mvalue_update_obtain by metis
   then have "locations m' is2 l2 = Some (the (locations m is2 l2))"
-    by (smt (verit) assms(1,2,3) length_list_update locations_same nth_safe_def nth_some)
+    by (smt (verit, best) assms(1,2,3) locations_same mvalue_update_length nth_list_update_neq
+        nth_safe_def option.sel)
   then show ?thesis by auto
 qed
 
@@ -762,12 +763,12 @@ qed
 
 subsection \<open>Write Memory\<close>
 
-corollary write_read_0:
+corollary write_read_1:
   assumes "Memory.write a m = (l, m')"
   shows "aread m' l = Some a"
   using Memory.write_read assms by blast
 
-lemma write_read_1:
+lemma write_read_2:
   assumes "Memory.write a2 m = (l2, m')"
       and "aread m l1 = Some a1"
     shows "aread m' l1 = Some a1"
@@ -1155,8 +1156,8 @@ method mc uses lookup
   | (erule range_some_mupdate_value)
   | (erule range_some_mupdate_1, assumption, assumption)
   | (erule range_some_mupdate_2)
-  | (erule write_read_0)
   | (erule write_read_1)
+  | (erule write_read_2)
   | (erule read_mupdate_value)
   | (erule read_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule read_mupdate_2)
