@@ -142,187 +142,187 @@ qed
 subsection \<open>Memory Lookup\<close>
 
 lemma mlookup_mupdate:
-  assumes "mupdate xs (l0, v0, m0) = Some m1"
-      and "mlookup m0 ys l1 = Some l1'"
-      and "locations m0 ys l1 = Some (the (locations m0 ys l1))"
-      and "the (mlookup m0 xs l0) |\<notin>| the (locations m0 ys l1)"
-    shows "mlookup m1 ys l1 = Some l1'"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l3"
+      and "locations m is2 l2 = Some (the (locations m is2 l2))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
+    shows "mlookup m' is2 l2 = Some l3"
 proof -
-  have m1_def: "m1 = m0[(the (mlookup m0 xs l0)) := v0]" using mvalue_update_obtain[OF assms(1)] by fastforce
-  then have "mlookup m1 ys l1 = mlookup m0 ys l1" using mlookup_update_val[OF assms(2) assms(3) assms(4)]
+  have m1_def: "m' = m[(the (mlookup m is1 l1)) := v]" using mvalue_update_obtain[OF assms(1)] by fastforce
+  then have "mlookup m' is2 l2 = mlookup m is2 l2" using mlookup_update_val[OF assms(2) assms(3) assms(4)]
     by (simp add: assms(2))
   then show ?thesis using assms(2) by simp
 qed
 
-lemma mlookup_some_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "\<not>Option.is_none (alookup xs cd)"
-    shows "mlookup m1 xs l0 = Some (the (mlookup m1 xs l0))"
+lemma mlookup_some_write_1:
+  assumes "Memory.write a m = (l, m')"
+      and "\<not>Option.is_none (alookup is a)"
+    shows "mlookup m' is l = Some (the (mlookup m' is l))"
   using assms
   by (metis is_none_code(1) mlookup_some option.distinct(1) option.exhaust_sel)
 
-lemma mlookup_some_write2:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m0 xs l1 = Some (the (mlookup m0 xs l1))"
-    shows "mlookup m1 xs l1 = Some (the (mlookup m1 xs l1))"
+lemma mlookup_some_write_2:
+  assumes "Memory.write a m = (l1, m')"
+      and "mlookup m is l2 = Some (the (mlookup m is l2))"
+    shows "mlookup m' is l2 = Some (the (mlookup m' is l2))"
   using assms
   by (metis write_sprefix mlookup_prefix_mlookup snd_conv sprefix_prefix)
 
 lemma mlookup_nth_mupdate:
-  assumes "mupdate xs (l1, v, m0) = Some m1"
-      and "the (mlookup m0 xs l1) |\<notin>| the (locations m0 xs l1)"
-    shows "mlookup m1 xs l1 \<bind> ($) m1 = Some v"
+  assumes "mupdate is (l, v, m) = Some m'"
+      and "the (mlookup m is l) |\<notin>| the (locations m is l)"
+    shows "mlookup m' is l \<bind> ($) m' = Some v"
 proof -
-  from assms(1) obtain l
-    where l_def: "mlookup m0 xs l1 = Some l"
-      and "l < length m0"
-      and "m1 = m0[l:=v]"
+  from assms(1) obtain ll
+    where l_def: "mlookup m is l = Some ll"
+      and "ll < length m"
+      and "m' = m[ll:=v]"
     using mvalue_update_obtain by metis
-  moreover from l_def obtain L where "locations m0 xs l1 = Some L"
+  moreover from l_def obtain L where "locations m is l = Some L"
     using mlookup_locations_some by blast
   ultimately show ?thesis
     by (metis assms(2) bind.bind_lunit length_list_update mlookup_update_val nth_list_update_eq nth_safe_some
         option.sel)
 qed
 
-lemma mlookup_neq_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m1 ys l0 = Some l2"
-      and "mlookup m0 xs l1 = Some (the (mlookup m0 xs l1))"
-      and "the (mlookup m0 xs l1) \<in> loc m0"
-    shows "the (mlookup m1 xs l1) \<noteq> l2"
+lemma mlookup_neq_write_1:
+  assumes "Memory.write a m = (l1, m')"
+      and "mlookup m' is1 l1 = Some l3"
+      and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
+      and "the (mlookup m is2 l2) \<in> loc m"
+    shows "the (mlookup m' is2 l2) \<noteq> l3"
 proof -
-  from assms(1) have "sprefix m0 m1" using write_sprefix by (metis snd_conv)
-  then have "prefix m0 m1" using sprefix_prefix by auto
+  from assms(1) have "sprefix m m'" using write_sprefix by (metis snd_conv)
+  then have "prefix m m'" using sprefix_prefix by auto
   moreover from write_arange[OF assms(1)] obtain L
-    where "arange_safe {||} m1 l0 = Some L"
-      and *: "fset L \<inter> loc m0 = {}"
+    where "arange_safe {||} m' l1 = Some L"
+      and *: "fset L \<inter> loc m = {}"
       unfolding s_disj_fs_def pred_some_def Utils.s_union_fs_def pred_some_def unfolding arange_safe_def arange_def data.range_def by blast
-  then have "l2 |\<in>| L" using a_data.range_safe_mlookup assms(2) by blast
-  with * have "l2 \<notin> loc m0" by blast
+  then have "l3 |\<in>| L" using a_data.range_safe_mlookup assms(2) by blast
+  with * have "l3 \<notin> loc m" by blast
   ultimately show ?thesis using assms(3,4)
-    by (metis \<open>prefix m0 m1\<close> mlookup_prefix_mlookup)
+    by (metis \<open>prefix m m'\<close> mlookup_prefix_mlookup)
 qed
 
-lemma mlookup_neq_write22:
-  assumes "Memory.write cd m0 = (l, m1)"
-      and "mlookup m1 ys l0 = Some l2"
-      and "mlookup m0 xs l1 = Some (the (mlookup m0 xs l1))"
-      and "mlookup m0 ys l0 = Some (the (mlookup m0 ys l0))"
-      and "mlookup m0 ys l0 = Some l2 \<Longrightarrow> the (mlookup m0 xs l1) \<noteq> l2"
-    shows "the (mlookup m1 xs l1) \<noteq> l2"
+lemma mlookup_neq_write_2:
+  assumes "Memory.write a m = (l, m')"
+      and "mlookup m' is1 l1 = Some l3"
+      and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
+      and "mlookup m is1 l1 = Some (the (mlookup m is1 l1))"
+      and "mlookup m is1 l1 = Some l3 \<Longrightarrow> the (mlookup m is2 l2) \<noteq> l3"
+    shows "the (mlookup m' is2 l2) \<noteq> l3"
 proof -
-  from assms(1) have *: "prefix m0 m1"
+  from assms(1) have *: "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  with assms(2,4) have "mlookup m0 ys l0 = Some l2"
+  with assms(2,4) have "mlookup m is1 l1 = Some l3"
     by (metis mlookup_prefix_mlookup)
-  with assms(5) have "the (mlookup m0 xs l1) \<noteq> l2" by blast
+  with assms(5) have "the (mlookup m is2 l2) \<noteq> l3" by blast
   with * show ?thesis
     by (metis assms(3) mlookup_prefix_mlookup)
 qed
 
-lemma mlookup_neq_mupdate2:
-  assumes "mupdate xs (l0, v, m0) = Some m1"
-      and "mlookup m1 zs laa = Some x"
-      and "mlookup m0 zs laa = Some (the (mlookup m0 zs laa))"
-      and "mlookup m0 ys l1 = Some (the (mlookup m0 ys l1))"
-      and "the (mlookup m0 xs l0) |\<notin>| the (locations m0 zs laa)"
-      and "the (mlookup m0 xs l0) |\<notin>| the (locations m0 ys l1)"
-      and "mlookup m0 zs laa = Some x \<Longrightarrow> the (mlookup m0 ys l1) \<noteq> x"
-    shows "the (mlookup m1 ys l1) \<noteq> x"
+lemma mlookup_neq_mupdate_2:
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m' is2 l2 = Some l4"
+      and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
+      and "mlookup m is3 l3 = Some (the (mlookup m is3 l3))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is3 l3)"
+      and "mlookup m is2 l2 = Some l4 \<Longrightarrow> the (mlookup m is3 l3) \<noteq> l4"
+    shows "the (mlookup m' is3 l3) \<noteq> l4"
 proof -
   obtain l
-    where 0: "mlookup m0 xs l0 = Some l"
-    and m'_def: "m1 = m0[l:=v]"
+    where 0: "mlookup m is1 l1 = Some l"
+    and m'_def: "m' = m[l:=v]"
     using mvalue_update_obtain[OF assms(1)] by auto
-  moreover from assms(2,3,5,7) have "the (mlookup m0 ys l1) \<noteq> x"
+  moreover from assms(2,3,5,7) have "the (mlookup m is3 l3) \<noteq> l4"
     by (metis "0" m'_def mlookup_locations_some mlookup_update_val option.sel)
   ultimately show ?thesis using assms(4,6)
     by (metis mlookup_locations_some mlookup_update_val option.sel)
 qed
 
-lemma mlookup_neq_mupdate:
-  assumes "mupdate ys (l1, v, m0) = Some m1"
-      and "mlookup m0 xs l0 = Some l0'"
-      and "m0 $ l0' = Some v"
-      and "mlookup m1 as l2 = Some yg"
-      and "zs \<noteq> []"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 ys l1)"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 (xs @ zs) l0)"
-      and "mlookup m0 as l2 = Some (the (mlookup m0 as l2))"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 as l2)"
-      and "mlookup m0 (xs @ zs) l0 = Some (the (mlookup m0 (xs @ zs) l0))"
-      and "mlookup m0 as l2 = Some yg \<Longrightarrow> the (mlookup m0 (xs @ zs) l0) \<noteq> yg"
-    shows "the (mlookup m1 (ys @ zs) l1) \<noteq> yg"
+lemma mlookup_neq_mupdate_1:
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l4"
+      and "m $ l4 = Some v"
+      and "mlookup m' is3 l3 = Some l5"
+      and "is4 \<noteq> []"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is1 l1)"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m (is2 @ is4) l2)"
+      and "mlookup m is3 l3 = Some (the (mlookup m is3 l3))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is3 l3)"
+      and "mlookup m (is2 @ is4) l2 = Some (the (mlookup m (is2 @ is4) l2))"
+      and "mlookup m is3 l3 = Some l5 \<Longrightarrow> the (mlookup m (is2 @ is4) l2) \<noteq> l5"
+    shows "the (mlookup m' (is1 @ is4) l1) \<noteq> l5"
 proof -
-  from assms(10) obtain L where "locations m0 (xs @ zs) l0 = Some L"
+  from assms(10) obtain L where "locations m (is2 @ is4) l2 = Some L"
     using mlookup_locations_some by blast
   then obtain L' L''
-    where L'_def: "locations m0 xs l0 = Some L'"
-      and L''_def: "locations m0 zs l0' = Some L''"
-      and 1: "locations m0 (xs @ zs) l0 = Some (L' |\<union>| L'')"
+    where L'_def: "locations m is2 l2 = Some L'"
+      and L''_def: "locations m is4 l4 = Some L''"
+      and 1: "locations m (is2 @ is4) l2 = Some (L' |\<union>| L'')"
     using locations_app_mlookup_exists[OF _ assms(2)] by force
 
   obtain l
-    where 0: "mlookup m0 ys l1 = Some l"
-    and m'_def: "m1 = m0[l:=v]"
-    and "l < length m0"
+    where 0: "mlookup m is1 l1 = Some l"
+    and m'_def: "m' = m[l:=v]"
+    and "l < length m"
   using mvalue_update_obtain[OF assms(1)] by auto
-  then have *: "m1 $ l = m0 $ l0'" unfolding nth_safe_def
+  then have *: "m' $ l = m $ l4" unfolding nth_safe_def
     by (metis assms(3) length_list_update nth_list_update_eq nth_safe_def)
   moreover
-  from L'_def L''_def 1 have "\<forall>l|\<in>|the (locations m0 zs l0'). m0 $ l = m1 $ l"
+  from L'_def L''_def 1 have "\<forall>l|\<in>|the (locations m is4 l4). m $ l = m' $ l"
    using assms(1,7) 0 m'_def
    by (metis funionI2 length_list_update nth_safe_def nth_some option.sel)
-  moreover from assms(6) have "\<forall>l|\<in>|the (locations m0 ys l1). m0 $ l = m1 $ l"
-    using m'_def `l < length m0` unfolding nth_safe_def apply (auto)
+  moreover from assms(6) have "\<forall>l|\<in>|the (locations m is1 l1). m $ l = m' $ l"
+    using m'_def `l < length m` unfolding nth_safe_def apply (auto)
     by (metis "0" nth_list_update_neq option.sel)
-  moreover obtain ll where "mlookup m0 zs l0' = Some ll"
+  moreover obtain ll where "mlookup m is4 l4 = Some ll"
     by (metis append_self_conv2 assms(2,10) mlookup.simps(1) mlookup_append) 
-  moreover from assms(1,4,8,9) have "mlookup m0 as l2 = Some yg"
-    by (metis mlookup_neq_mupdate2 option.sel)
-  then have "ll \<noteq> yg"
+  moreover from assms(1,4,8,9) have "mlookup m is3 l3 = Some l5"
+    by (metis mlookup_neq_mupdate_2 option.sel)
+  then have "ll \<noteq> l5"
     by (metis assms(2,11) bind_eq_Some_conv calculation(4) mlookup_append option.sel)
   ultimately show ?thesis using mlookup_mlookup_mlookup[OF 0 * assms(5)] by fastforce
 qed
 
-lemma mlookup_loc_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "\<not> Option.is_none (alookup xs cd)"
-    shows "the (mlookup m1 xs l0) \<in> loc m1"
+lemma mlookup_loc_write_1:
+  assumes "Memory.write a m = (l, m')"
+      and "\<not> Option.is_none (alookup is a)"
+    shows "the (mlookup m' is l) \<in> loc m'"
 proof -
   from Memory.write_loc[OF assms(1)] obtain L
-    where "arange m1 l0 = Some L"
-      and "loc m1 = loc m0 \<union> fset L"
+    where "arange m' l = Some L"
+      and "loc m' = loc m \<union> fset L"
     unfolding Utils.s_union_fs_def pred_some_def arange_safe_def arange_def data.range_def
     by blast
   moreover from mlookup_some[OF assms(1)] assms(2)
-  obtain y where "mlookup m1 xs l0 = Some y"
+  obtain y where "mlookup m' is l = Some y"
     by force
   ultimately show ?thesis
     by (metis UnCI option.sel a_data.range_mlookup)
 qed
 
-lemma mlookup_loc_write2:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m0 xs l1 = Some (the (mlookup m0 xs l1))"
-      and "the (mlookup m0 xs l1) \<in> loc m0"
-    shows "the (mlookup m1 xs l1) \<in> loc m1"
+lemma mlookup_loc_write_2:
+  assumes "Memory.write a m = (l1, m')"
+      and "mlookup m is l2 = Some (the (mlookup m is l2))"
+      and "the (mlookup m is l2) \<in> loc m"
+    shows "the (mlookup m' is l2) \<in> loc m'"
 proof -
-  from assms(1) have *: "prefix m0 m1"
+  from assms(1) have *: "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  with assms(2,3) have "the (mlookup m1 xs l1) \<in> loc m0"
+  with assms(2,3) have "the (mlookup m' is l2) \<in> loc m"
     using mlookup_prefix_mlookup by fastforce
   then show ?thesis using * unfolding loc_def
     by (metis mem_Collect_eq nth_safe_length nth_safe_prefix nth_safe_some)
 qed
 
 lemma mlookup_nin_loc_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m1 xs l0 = Some (the (mlookup m1 xs l0))"
-    shows "the (mlookup m1 xs l0) \<notin> loc m0"
+  assumes "Memory.write a m = (l, m')"
+      and "mlookup m' is l = Some (the (mlookup m' is l))"
+    shows "the (mlookup m' is l) \<notin> loc m"
   using assms
-  by (metis mlookup.simps(1) mlookup_neq_write)
+  by (metis mlookup.simps(1) mlookup_neq_write_1)
 
 subsection \<open>Locations\<close>
 
@@ -331,7 +331,7 @@ lemma locations_write_1:
       and "\<not>Option.is_none (alookup is a)"
     shows "locations m' is l = Some (the (locations m' is l))"
   using assms
-  by (metis is_none_code(2) is_none_mlookup_locations is_none_simps(1) mlookup_some_write option.collapse)
+  by (metis is_none_code(2) is_none_mlookup_locations is_none_simps(1) mlookup_some_write_1 option.collapse)
 
 lemma locations_write_2:
   assumes "Memory.write a m = (l1, m')"
@@ -364,181 +364,181 @@ qed
 subsection \<open>Memory Lookup and Locations\<close>
 
 lemma mlookup_locations_write_1:
-  assumes "Memory.write cd m0 = (l, m1)"
-      and "\<not> Option.is_none (alookup xs cd)"
-    shows "the (mlookup m1 xs l) |\<notin>| the (locations m1 xs l)" 
-  using assms locations_write_1 write_mlookup_locations mlookup_some_write by blast
+  assumes "Memory.write a m = (l, m')"
+      and "\<not> Option.is_none (alookup is a)"
+    shows "the (mlookup m' is l) |\<notin>| the (locations m' is l)" 
+  using assms locations_write_1 write_mlookup_locations mlookup_some_write_1 by blast
 
 lemma mlookup_locations_write_2:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "\<not> Option.is_none (alookup ys cd)"
-      and "mlookup m0 xs l1 = Some (the (mlookup m0 xs l1))"
-      and "the (mlookup m0 xs l1) \<in> loc m0"
-    shows "the (mlookup m1 xs l1) |\<notin>| the (locations m1 ys l0)"
+  assumes "Memory.write a m = (l1, m')"
+      and "\<not> Option.is_none (alookup is1 a)"
+      and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
+      and "the (mlookup m is2 l2) \<in> loc m"
+    shows "the (mlookup m' is2 l2) |\<notin>| the (locations m' is1 l1)"
 proof -
-  have *: "prefix m0 m1" using write_sprefix[of m0 cd] assms(1) sprefix_prefix by simp
+  have *: "prefix m m'" using write_sprefix[of m a] assms(1) sprefix_prefix by simp
 
-  from write_locations_some[OF assms(1), of ys]
-  obtain L' where L'_def: "locations m1 ys l0 = Some L'" using assms(2) by fastforce
-  moreover obtain L where L_def: "arange m1 l0 = Some L" and **: "fset L \<inter> loc m0 = {}"
+  from write_locations_some[OF assms(1), of is1]
+  obtain L' where L'_def: "locations m' is1 l1 = Some L'" using assms(2) by fastforce
+  moreover obtain L where L_def: "arange m' l1 = Some L" and **: "fset L \<inter> loc m = {}"
     using write_arange[OF assms(1)] unfolding pred_some_def s_disj_fs_def by auto
   ultimately have "L' |\<subseteq>| L" using a_data.range_locations by blast
-  moreover from assms(3,4) obtain l where "mlookup m0 xs l1 = Some l" and ***: "l \<in> loc m0" by blast
-  then have "mlookup m1 xs l1 = Some l" using mlookup_prefix_mlookup * by blast
+  moreover from assms(3,4) obtain l where "mlookup m is2 l2 = Some l" and ***: "l \<in> loc m" by blast
+  then have "mlookup m' is2 l2 = Some l" using mlookup_prefix_mlookup * by blast
   ultimately show ?thesis using ** *** L'_def unfolding pred_some_def by auto
 qed
 
-lemma mlookup_locations_write_21:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "\<not> Option.is_none (alookup xs cd)"
-      and "locations m0 ys l1 = Some (the (locations m0 ys l1))"
-    shows "the (mlookup m1 xs l0) |\<notin>| the (locations m1 ys l1)"
+lemma mlookup_locations_write_3:
+  assumes "Memory.write a m = (l1, m')"
+      and "\<not> Option.is_none (alookup is1 a)"
+      and "locations m is2 l2 = Some (the (locations m is2 l2))"
+    shows "the (mlookup m' is1 l1) |\<notin>| the (locations m' is2 l2)"
 proof -
-  have *: "prefix m0 m1" using write_sprefix[of m0 cd] assms(1) sprefix_prefix by simp
+  have *: "prefix m m'" using write_sprefix[of m a] assms(1) sprefix_prefix by simp
 
-  from mlookup_some[OF assms(1), of xs]
-  obtain l where l_def: "mlookup m1 xs l0 = Some l" using assms(2) by fastforce
-  moreover have "l \<notin> loc m0"
+  from mlookup_some[OF assms(1), of is1]
+  obtain l where l_def: "mlookup m' is1 l1 = Some l" using assms(2) by fastforce
+  moreover have "l \<notin> loc m"
     by (metis assms(1) l_def mlookup_nin_loc_write option.sel)
-  moreover have "fset (the (locations m0 ys l1)) \<subseteq> loc m0" using locations_subs_loc[OF assms(3)] by blast
+  moreover have "fset (the (locations m is2 l2)) \<subseteq> loc m" using locations_subs_loc[OF assms(3)] by blast
   ultimately show ?thesis using assms
     by (metis "*" locations_prefix_locations option.sel subsetD)
 qed
 
-lemma mlookup_locations_write_3:
-  assumes "Memory.write cd m0 = (l, m1)"
-    and "mlookup m0 xs x1 = Some (the (mlookup m0 xs x1))"
-    and "locations m0 ys x2 = Some (the (locations m0 ys x2))"
-    and "the (mlookup m0 xs x1) |\<notin>| the (locations m0 ys x2)"
-  shows "the (mlookup m1 xs x1) |\<notin>| the (locations m1 ys x2)"
+lemma mlookup_locations_write_4:
+  assumes "Memory.write a m = (l, m')"
+    and "mlookup m is1 l1 = Some (the (mlookup m is1 l1))"
+    and "locations m is2 l2 = Some (the (locations m is2 l2))"
+    and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
+  shows "the (mlookup m' is1 l1) |\<notin>| the (locations m' is2 l2)"
 proof -
-  from assms(1) have "sprefix m0 m1" using write_sprefix
+  from assms(1) have "sprefix m m'" using write_sprefix
     by (metis snd_conv)
-  then have "prefix m0 m1" using sprefix_prefix by auto
-  then have "mlookup m1 xs x1 = Some (the (mlookup m0 xs x1))" using mlookup_prefix_mlookup[OF assms(2)] by simp
-  moreover have "locations m1 ys x2 = Some (the (locations m0 ys x2))"
-    using locations_prefix_locations[OF assms(3) `prefix m0 m1`] by blast
+  then have "prefix m m'" using sprefix_prefix by auto
+  then have "mlookup m' is1 l1 = Some (the (mlookup m is1 l1))" using mlookup_prefix_mlookup[OF assms(2)] by simp
+  moreover have "locations m' is2 l2 = Some (the (locations m is2 l2))"
+    using locations_prefix_locations[OF assms(3) `prefix m m'`] by blast
   ultimately show ?thesis using assms(4) by simp
 qed
 
 lemma mlookup_locations_mupdate_1:
-  assumes "mupdate xs (l0, v, m0) = Some m1"
-      and "mlookup m0 ys l1 = Some l0'"
-      and "m0 $ l0' = Some v"
-      and "zs = z # zs'"
-      and "the (mlookup m0 xs l0) |\<notin>| the (locations m0 xs l0)"
-      and "locations m0 (xs @ zs) l0 = Some (the (locations m0 (xs @ zs) l0))"
-      and "the (mlookup m0 xs l0) |\<notin>| the (locations m0 (ys @ zs) l1)"
-      and "the (mlookup m0 (ys @ zs) l1) |\<notin>| the (locations m0 (xs @ zs) l0)"
-      and "mlookup m0 (ys @ zs) l1 = Some (the (mlookup m0 (ys @ zs) l1))"
-      and "the (mlookup m0 (ys @ zs) l1) |\<notin>| the (locations m0 (ys @ zs) l1)"
-    shows "the (mlookup m1 (xs @ zs) l0) |\<notin>| the (locations m1 (xs @ zs) l0)"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l3"
+      and "m $ l3 = Some v"
+      and "is3 = i # is4"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is1 l1)"
+      and "locations m (is1 @ is3) l1 = Some (the (locations m (is1 @ is3) l1))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m (is2 @ is3) l2)"
+      and "the (mlookup m (is2 @ is3) l2) |\<notin>| the (locations m (is1 @ is3) l1)"
+      and "mlookup m (is2 @ is3) l2 = Some (the (mlookup m (is2 @ is3) l2))"
+      and "the (mlookup m (is2 @ is3) l2) |\<notin>| the (locations m (is2 @ is3) l2)"
+    shows "the (mlookup m' (is1 @ is3) l1) |\<notin>| the (locations m' (is1 @ is3) l1)"
 proof -
-  from assms(9) have a0: "locations m0 (ys @ zs) l1 = Some (the (locations m0 (ys @ zs) l1))"
+  from assms(9) have a0: "locations m (is2 @ is3) l2 = Some (the (locations m (is2 @ is3) l2))"
     by (simp add: mlookup_locations_some)
 
   obtain L L'
-    where L_def: "locations m0 ys l1 = Some L"
-      and L'_def: "locations m0 zs l0' = Some L'"
-      and 1: "locations m0 (ys @ zs) l1 = Some (L |\<union>| L')"
+    where L_def: "locations m is2 l2 = Some L"
+      and L'_def: "locations m is3 l3 = Some L'"
+      and 1: "locations m (is2 @ is3) l2 = Some (L |\<union>| L')"
     using locations_app_mlookup_exists[OF a0 assms(2)] by (metis a0)
   from L'_def obtain l''
-    where l''_def: "mlookup m0 [z] l0' = Some l''"
+    where l''_def: "mlookup m [i] l3 = Some l''"
     using assms(4)
     apply (auto simp add:locations.simps mlookup.simps case_memory_def split:option.split_asm mdata.split_asm)
-    apply (case_tac "vtype_class.to_nat z", auto)
+    apply (case_tac "vtype_class.to_nat i", auto)
     by (case_tac "x2a$a", auto)
   then obtain L''
-    where L''_def: "locations m0 zs' (the (mlookup m0 [z] l0')) = Some L''"
+    where L''_def: "locations m is4 (the (mlookup m [i] l3)) = Some L''"
       and 2: "L'' |\<subseteq>| L'"
     using locations_cons_mlookup_exists L'_def assms(4) by (metis option.sel)
 
   obtain l
-    where 3: "mlookup m0 xs l0 = Some l"
-    and m'_def: "m1 = m0[l:=v]"
-    and 4: "length m0 > l"
+    where 3: "mlookup m is1 l1 = Some l"
+    and m'_def: "m' = m[l:=v]"
+    and 4: "length m > l"
   using mvalue_update_obtain[OF assms(1)] by auto
-  then have "m0 $ l0' = m1 $ l" unfolding nth_safe_def
+  then have "m $ l3 = m' $ l" unfolding nth_safe_def
     by (metis assms(3) length_list_update nth_list_update_eq nth_safe_def)
-  moreover have *: "locations m0 xs l0 = Some (the (locations m0 xs l0))"
+  moreover have *: "locations m is1 l1 = Some (the (locations m is1 l1))"
     by (simp add: "3" mlookup_locations_some)
-  moreover have **: "\<forall>l|\<in>|the (locations m0 xs l0). m0 $ l = m1 $ l"
+  moreover have **: "\<forall>l|\<in>|the (locations m is1 l1). m $ l = m' $ l"
     using assms(5) 3 m'_def unfolding nth_safe_def apply auto
     by (metis nth_list_update_neq)
   moreover
-    have ***: "locations m0 zs' (the (mlookup m0 [z] l0'))
-      = Some (the (locations m0 zs' (the (mlookup m0 [z] l0'))))"
+    have ***: "locations m is4 (the (mlookup m [i] l3))
+      = Some (the (locations m is4 (the (mlookup m [i] l3))))"
       using L''_def by simp
-  moreover have "\<forall>l|\<in>|the (locations m0 zs' (the (mlookup m0 [z] l0'))). m0 $ l = m1 $ l"
+  moreover have "\<forall>l|\<in>|the (locations m is4 (the (mlookup m [i] l3))). m $ l = m' $ l"
   proof
-    fix l' assume "l' |\<in>| the (locations m0 zs' (the (mlookup m0 [z] l0')))"
-    then have "l' |\<in>| the (locations m0 (ys @ zs) l1)"
+    fix l' assume "l' |\<in>| the (locations m is4 (the (mlookup m [i] l3)))"
+    then have "l' |\<in>| the (locations m (is2 @ is3) l2)"
       using L''_def 2 1 by auto
-    then show "m0 $ l' = m1 $ l'"
+    then show "m $ l' = m' $ l'"
       using assms(7) m'_def 3 unfolding nth_safe_def apply auto
       by (metis nth_list_update_neq)
   qed
-  moreover have "mlookup m0 [z] l0' = Some (the (mlookup m0 [z] l0'))"
+  moreover have "mlookup m [i] l3 = Some (the (mlookup m [i] l3))"
     using l''_def by auto
   ultimately have
-    "locations m1 (xs @ zs) l0
-      = Some (finsert l (the (locations m0 xs l0))
-      |\<union>| the (locations m0 zs' (the (mlookup m0 [z] l0'))))" 
-    using locations_union_mlookup_nth[OF assms(4) 3 , of _ _ _  "the (locations m0 xs l0)"]
+    "locations m' (is1 @ is3) l1
+      = Some (finsert l (the (locations m is1 l1))
+      |\<union>| the (locations m is4 (the (mlookup m [i] l3))))" 
+    using locations_union_mlookup_nth[OF assms(4) 3 , of _ _ _  "the (locations m is1 l1)"]
     by simp
-  moreover have "the (mlookup m1 (xs @ zs) l0) = the (mlookup m0 (ys @ zs) l1)"
+  moreover have "the (mlookup m' (is1 @ is3) l1) = the (mlookup m (is2 @ is3) l2)"
   proof -
-    from L'_def L''_def 1 have "\<forall>l|\<in>|the (locations m0 zs l0'). m0 $ l = m1 $ l"
+    from L'_def L''_def 1 have "\<forall>l|\<in>|the (locations m is3 l3). m $ l = m' $ l"
       using assms(7) 3 m'_def
       by (metis funionI2 length_list_update nth_list_update_neq nth_safe_def option.sel)
     moreover from assms(2,9)
-      obtain ll where "mlookup m0 zs l0' = Some ll" by (simp add: mlookup_append)
-    ultimately show ?thesis using mlookup_mlookup_mlookup[OF 3, of m1 l0' zs ll] \<open>m0 $ l0' = m1 $ l\<close> ** assms(4)
+      obtain ll where "mlookup m is3 l3 = Some ll" by (simp add: mlookup_append)
+    ultimately show ?thesis using mlookup_mlookup_mlookup[OF 3, of m' l3 is3 ll] \<open>m $ l3 = m' $ l\<close> ** assms(4)
       by (simp add: assms(2) mlookup_append)
   qed
   moreover from assms(4,6)
-    have "(finsert l (the (locations m0 xs l0)) |\<subseteq>| the (locations m0 (xs @ zs) l0))"
+    have "(finsert l (the (locations m is1 l1)) |\<subseteq>| the (locations m (is1 @ is3) l1))"
     by (metis "3" * finsert_fsubset list.distinct(1) locations_append_subset mlookup_in_locations
         option.inject)
   moreover from assms(10)
-    have "the (locations m0 zs' (the (mlookup m0 [z] l0'))) |\<subseteq>| the (locations m0 (ys @ zs) l1)"
+    have "the (locations m is4 (the (mlookup m [i] l3))) |\<subseteq>| the (locations m (is2 @ is3) l2)"
       using L''_def 1 2 by auto
   ultimately show ?thesis using assms(8,10) by auto
 qed
 
 lemma mlookup_locations_mupdate_2:
-  assumes "mupdate ys (l1, v, m0) = Some m1"
-      and "mlookup m0 xs l0 = Some l0'"
-      and "m0 $ l0' = Some v"
-      and "zs \<noteq> []"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 ys l1)"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 xs l0)"
-      and "locations m0 as l2 = Some (the (locations m0 as l2))"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 as l2)"
-      and "mlookup m0 (xs @ zs) l0 = Some (the (mlookup m0 (xs @ zs) l0))"
-      and "the (mlookup m0 ys l1) |\<notin>| the (locations m0 (xs @ zs) l0)"
-      and "the (mlookup m0 (xs @ zs) l0) |\<notin>| the (locations m0 as l2)"
-    shows "the (mlookup m1 (ys @ zs) l1) |\<notin>| the (locations m1 as l2)"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l4"
+      and "m $ l4 = Some v"
+      and "is4 \<noteq> []"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is1 l1)"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
+      and "locations m is3 l3 = Some (the (locations m is3 l3))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is3 l3)"
+      and "mlookup m (is2 @ is4) l2 = Some (the (mlookup m (is2 @ is4) l2))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m (is2 @ is4) l2)"
+      and "the (mlookup m (is2 @ is4) l2) |\<notin>| the (locations m is3 l3)"
+    shows "the (mlookup m' (is1 @ is4) l1) |\<notin>| the (locations m' is3 l3)"
 proof -
   obtain l
-    where 0: "mlookup m0 ys l1 = Some l"
-    and m'_def: "m1 = m0[l:=v]"
-    and "l < length m0"
+    where 0: "mlookup m is1 l1 = Some l"
+    and m'_def: "m' = m[l:=v]"
+    and "l < length m"
   using mvalue_update_obtain[OF assms(1)] by auto
-  then have *:"m1 $ l = Some v" unfolding nth_safe_def by simp
-  moreover have "l |\<notin>| the (locations m0 ys l1)" using assms(5) 0 by simp
-  then have **: "mlookup m1 ys l1 = Some l" using m'_def
+  then have *:"m' $ l = Some v" unfolding nth_safe_def by simp
+  moreover have "l |\<notin>| the (locations m is1 l1)" using assms(5) 0 by simp
+  then have **: "mlookup m' is1 l1 = Some l" using m'_def
     by (metis "0" assms(1) mlookup_locations_some mlookup_mupdate option.sel)
-  moreover have "mlookup m1 xs l0 = Some (the (mlookup m0 xs l0))" using assms
+  moreover have "mlookup m' is2 l2 = Some (the (mlookup m is2 l2))" using assms
     by (simp add: mlookup_locations_some mlookup_mupdate)
-  then have ***: "mlookup m1 xs l0 \<bind> ($) m1 = Some v" using assms(1,2)
+  then have ***: "mlookup m' is2 l2 \<bind> ($) m' = Some v" using assms(1,2)
     by (metis "*" "0" assms(3) bind.bind_lunit nth_some option.sel)
-  ultimately have "mlookup m1 (ys @ zs) l1 = mlookup m1 (xs @ zs) l0" using mlookup_append_same[OF assms(4) ** * ***] by simp
-  moreover from assms(9,10) 0 m'_def have "mlookup m1 (xs @ zs) l0 = mlookup m0 (xs @ zs) l0"
+  ultimately have "mlookup m' (is1 @ is4) l1 = mlookup m' (is2 @ is4) l2" using mlookup_append_same[OF assms(4) ** * ***] by simp
+  moreover from assms(9,10) 0 m'_def have "mlookup m' (is2 @ is4) l2 = mlookup m (is2 @ is4) l2"
     by (metis mlookup_locations_some mlookup_update_val option.sel)
-  moreover from assms(7,8) 0 m'_def have "\<forall>l|\<in>|the (locations m0 as l2). m1 $ l = m0 $ l" unfolding nth_safe_def apply (auto)
+  moreover from assms(7,8) 0 m'_def have "\<forall>l|\<in>|the (locations m is3 l3). m' $ l = m $ l" unfolding nth_safe_def apply (auto)
     by (metis nth_list_update_neq)
-  with assms(7,8) 0 m'_def have "the (locations m1 as l2) = the (locations m0 as l2)"
+  with assms(7,8) 0 m'_def have "the (locations m' is3 l3) = the (locations m is3 l3)"
     by (metis locations_same)
   ultimately show ?thesis by (simp add: assms(11))
 qed
@@ -1166,15 +1166,15 @@ method mc uses lookup
   | (erule disjoined_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule nth_some, solves\<open>simp\<close>)
   | (erule mlookup_mupdate, solves\<open>simp\<close>)
-  | (erule mlookup_some_write, (slookup lookup: lookup)?)
-  | (erule mlookup_some_write2)
+  | (erule mlookup_some_write_1, (slookup lookup: lookup)?)
+  | (erule mlookup_some_write_2)
   | (erule mlookup_nth_mupdate)
-  | (erule mlookup_neq_write, solves\<open>simp\<close>)
-  | (erule mlookup_neq_write22, assumption)
-  | (erule mlookup_neq_mupdate, assumption, assumption, assumption, solves\<open>simp\<close>)
-  | (erule mlookup_neq_mupdate2, assumption, assumption, assumption, solves\<open>simp\<close>)
-  | (erule mlookup_loc_write, (slookup lookup: lookup)?)
-  | (erule mlookup_loc_write2)
+  | (erule mlookup_neq_write_1, solves\<open>simp\<close>)
+  | (erule mlookup_neq_write_2, assumption)
+  | (erule mlookup_neq_mupdate_1, assumption, assumption, assumption, solves\<open>simp\<close>)
+  | (erule mlookup_neq_mupdate_2, assumption, assumption, assumption, solves\<open>simp\<close>)
+  | (erule mlookup_loc_write_1, (slookup lookup: lookup)?)
+  | (erule mlookup_loc_write_2)
   | (erule mlookup_nin_loc_write, solves\<open>simp\<close>)
   | (erule mlookup_range_write_1)
   | (erule mlookup_range_write_2)
@@ -1183,8 +1183,8 @@ method mc uses lookup
   | (erule locations_mupdate)
   | (erule mlookup_locations_write_1, (slookup lookup: lookup)?)
   | (erule mlookup_locations_write_2, (slookup lookup: lookup)?)
-  | (erule mlookup_locations_write_21, (slookup lookup: lookup)?)
-  | (erule mlookup_locations_write_3)
+  | (erule mlookup_locations_write_3, (slookup lookup: lookup)?)
+  | (erule mlookup_locations_write_4)
   | (erule mlookup_locations_mupdate_1, assumption, assumption, solves\<open>simp\<close>)
   | (erule mlookup_locations_mupdate_2, assumption, assumption, solves\<open>simp\<close>)
   | (erule disjoined_mupdate_2)
