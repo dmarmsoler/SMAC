@@ -326,37 +326,37 @@ lemma mlookup_nin_loc_write:
 
 subsection \<open>Locations\<close>
 
-lemma locations_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "\<not>Option.is_none (alookup xs cd)"
-    shows "locations m1 xs l0 = Some (the (locations m1 xs l0))"
+lemma locations_write_1:
+  assumes "Memory.write a m = (l, m')"
+      and "\<not>Option.is_none (alookup is a)"
+    shows "locations m' is l = Some (the (locations m' is l))"
   using assms
   by (metis is_none_code(2) is_none_mlookup_locations is_none_simps(1) mlookup_some_write option.collapse)
 
-lemma locations_write1:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "locations m0 ys l1 = Some (the (locations m0 ys l1))"
-    shows "locations m1 ys l1 = Some (the (locations m1 ys l1))"
+lemma locations_write_2:
+  assumes "Memory.write a m = (l1, m')"
+      and "locations m is l2 = Some (the (locations m is l2))"
+    shows "locations m' is l2 = Some (the (locations m' is l2))"
 proof -
-  from assms(1) have *: "prefix m0 m1"
+  from assms(1) have *: "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  then have "locations m1 ys l1 = Some (the (locations m0 ys l1))"
+  then have "locations m' is l2 = Some (the (locations m is l2))"
     using locations_prefix_locations[OF _ *] assms(2) by simp
   then show ?thesis by simp
 qed
 
 lemma locations_mupdate:
-  assumes "mupdate xs (l0, v, m0) = Some m1"
-      and "the (mlookup m0 xs l0) |\<notin>| (the (locations m0 ys l1))"
-      and "locations m0 ys l1 = Some (the (locations m0 ys l1))"
-    shows "locations m1 ys l1 = Some (the (locations m1 ys l1))"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "the (mlookup m is1 l1) |\<notin>| (the (locations m is2 l2))"
+      and "locations m is2 l2 = Some (the (locations m is2 l2))"
+    shows "locations m' is2 l2 = Some (the (locations m' is2 l2))"
 proof -
   from assms(1) obtain l
-    where l_def: "mlookup m0 xs l0 = Some l"
-      and "l < length m0"
-      and "m1 = m0[l:=v]"
+    where l_def: "mlookup m is1 l1 = Some l"
+      and "l < length m"
+      and "m' = m[l:=v]"
     using mvalue_update_obtain by metis
-  then have "locations m1 ys l1 = Some (the (locations m0 ys l1))"
+  then have "locations m' is2 l2 = Some (the (locations m is2 l2))"
     by (smt (verit) assms(1,2,3) length_list_update locations_same nth_safe_def nth_some)
   then show ?thesis by auto
 qed
@@ -367,7 +367,7 @@ lemma mlookup_locations_write_1:
   assumes "Memory.write cd m0 = (l, m1)"
       and "\<not> Option.is_none (alookup xs cd)"
     shows "the (mlookup m1 xs l) |\<notin>| the (locations m1 xs l)" 
-  using assms locations_write write_mlookup_locations mlookup_some_write by blast
+  using assms locations_write_1 write_mlookup_locations mlookup_some_write by blast
 
 lemma mlookup_locations_write_2:
   assumes "Memory.write cd m0 = (l0, m1)"
@@ -727,36 +727,36 @@ qed
 
 subsection \<open>Memory Lookup and Memory Locations\<close>
 
-lemma mlookup_range_write:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m0 is1 l1 = Some (the (mlookup m0 is1 l1))"
-      and "the (mlookup m0 is1 l1) \<in> loc m0"
-    shows "the (mlookup m1 is1 l1) |\<notin>| the (arange m1 l0)"
+lemma mlookup_range_write_1:
+  assumes "Memory.write a m = (l1, m')"
+      and "mlookup m is l2 = Some (the (mlookup m is l2))"
+      and "the (mlookup m is l2) \<in> loc m"
+    shows "the (mlookup m' is l2) |\<notin>| the (arange m' l1)"
 proof -
-  from assms(1) obtain L where L_def: "arange m1 l0 = Some L"
+  from assms(1) obtain L where L_def: "arange m' l1 = Some L"
     using range_range_write_1 by blast
-  then have "fset L \<inter> loc m0 = {}"
+  then have "fset L \<inter> loc m = {}"
     by (metis Diff_disjoint Memory.write_loc assms(1) inf_commute write_arange option.sel s_disj_union_fs)
-  moreover from assms(1) have "prefix m0 m1"
+  moreover from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  with assms(2) have "the (mlookup m1 is1 l1) = the (mlookup m0 is1 l1)"
+  with assms(2) have "the (mlookup m' is l2) = the (mlookup m is l2)"
     by (metis mlookup_prefix_mlookup)
   ultimately show ?thesis using L_def assms by auto
 qed
 
-lemma mlookup_range_write2:
-  assumes "Memory.write cd m0 = (l0, m1)"
-      and "mlookup m0 is1 l1 = Some (the (mlookup m0 is1 l1))"
-      and "arange m0 l = Some (the (arange m0 l))"
-      and "the (mlookup m0 is1 l1) |\<notin>| the (arange m0 l)"
-    shows "the (mlookup m1 is1 l1) |\<notin>| the (arange m1 l)"
+lemma mlookup_range_write_2:
+  assumes "Memory.write a m = (l1, m')"
+      and "mlookup m is l2 = Some (the (mlookup m is l2))"
+      and "arange m l3 = Some (the (arange m l3))"
+      and "the (mlookup m is l2) |\<notin>| the (arange m l3)"
+    shows "the (mlookup m' is l2) |\<notin>| the (arange m' l3)"
 proof -
-  from assms(1) have "prefix m0 m1"
+  from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  then have "the (mlookup m0 is1 l1) = the (mlookup m1 is1 l1)"
+  then have "the (mlookup m is l2) = the (mlookup m' is l2)"
     by (metis assms(2) mlookup_prefix_mlookup)
-  moreover have "the (arange m0 l) = the (arange m1 l)"
-    by (metis \<open>prefix m0 m1\<close> assms(3) a_data.range_prefix)
+  moreover have "the (arange m l3) = the (arange m' l3)"
+    by (metis \<open>prefix m m'\<close> assms(3) a_data.range_prefix)
   ultimately show ?thesis using assms(4) by simp
 qed
 
@@ -1176,10 +1176,10 @@ method mc uses lookup
   | (erule mlookup_loc_write, (slookup lookup: lookup)?)
   | (erule mlookup_loc_write2)
   | (erule mlookup_nin_loc_write, solves\<open>simp\<close>)
-  | (erule mlookup_range_write)
-  | (erule mlookup_range_write2)
-  | (erule locations_write, (slookup lookup: lookup)?)
-  | (erule locations_write1)
+  | (erule mlookup_range_write_1)
+  | (erule mlookup_range_write_2)
+  | (erule locations_write_1, (slookup lookup: lookup)?)
+  | (erule locations_write_2)
   | (erule locations_mupdate)
   | (erule mlookup_locations_write_1, (slookup lookup: lookup)?)
   | (erule mlookup_locations_write_2, (slookup lookup: lookup)?)

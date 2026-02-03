@@ -30,7 +30,7 @@ lemma (in Contract) example:
   (*Aliasing*)
   apply (drule_tac ?xs1.0 = "[Uint 0]" and ?l1.0=l in aliasing, simp, simp)
   apply (erule mlookup_mupdate, simp)
-  apply (erule locations_write, simp add:alookup.simps)
+  apply (erule locations_write_1, simp add:alookup.simps)
   apply (erule mlookup_locations_write_2, simp add:alookup.simps)
   apply (erule mlookup_some_write, simp add:alookup.simps)
   apply (erule mlookup_loc_write, simp add:alookup.simps)
@@ -41,7 +41,7 @@ lemma (in Contract) example:
   apply (erule mlookup_nth_mupdate, simp)
   apply (erule mlookup_locations_write_3)
   apply (erule mlookup_some_write, simp add:alookup.simps)
-  apply (erule locations_write,simp add: alookup.simps)
+  apply (erule locations_write_1,simp add: alookup.simps)
   apply (erule mlookup_locations_write_1,simp add: alookup.simps)
   (*Aliasing*)
 
