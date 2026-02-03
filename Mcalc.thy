@@ -546,90 +546,90 @@ qed
 subsection \<open>Memory Locations\<close>
 
 lemma range_range_write_1:
-  assumes "Memory.write cd m0 = (l0, m1)"
-    shows "arange m1 l0 = Some (the (arange m1 l0))"
+  assumes "Memory.write a m = (l, m')"
+    shows "arange m' l = Some (the (arange m' l))"
   using Memory.write_loc[OF assms(1)] unfolding s_union_fs_def pred_some_def by auto
 
 lemma range_range_write_2:
-  assumes "Memory.write cd m0 = (l1, m1)"
-    and "arange m0 l = Some (the (arange m0 l))"
-  shows "arange m1 l = Some (the (arange m1 l))"
+  assumes "Memory.write a m = (l, m')"
+    and "arange m l' = Some (the (arange m l'))"
+  shows "arange m' l' = Some (the (arange m' l'))"
 proof -
-  from assms(1) have "prefix m0 m1"
+  from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
   then show ?thesis
     by (metis assms(2) a_data.range_prefix)
 qed
 
 lemma range_range_disj_write:
-  assumes "Memory.write cd m0 = (l1, m1)"
-    and "arange m0 l0 = Some (the (arange m0 l0))"
-  shows "the (arange m1 l0) |\<inter>| the (arange m1 l1) = {||}"
+  assumes "Memory.write a m = (l2, m')"
+    and "arange m l1 = Some (the (arange m l1))"
+  shows "the (arange m' l1) |\<inter>| the (arange m' l2) = {||}"
 proof -
-  from assms(1) have "prefix m0 m1"
+  from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
-  moreover from assms(2) have "fset (the (arange m0 l0)) \<subseteq> loc m0" using a_data.range_subs2 by auto
-  ultimately have "fset (the (arange m1 l0)) \<subseteq> loc m0"
+  moreover from assms(2) have "fset (the (arange m l1)) \<subseteq> loc m" using a_data.range_subs2 by auto
+  ultimately have "fset (the (arange m' l1)) \<subseteq> loc m"
     by (metis assms(2) a_data.range_prefix)
   then show ?thesis using write_arange[OF assms(1)] unfolding s_disj_fs_def pred_some_def
     by auto
 qed
 
 lemma range_some_mupdate_value:
-  assumes "mupdate is1 (l1, mdata.Value v, m0) = Some m1"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-    shows "arange m1 l1 = Some (the (arange m1 l1))"
+  assumes "mupdate is (l, mdata.Value v, m) = Some m'"
+      and "arange m l = Some (the (arange m l))"
+    shows "arange m' l = Some (the (arange m' l))"
   using assms
-    a_data.mupdate_range_subset[of m0 l1 m1 _ "v"]
+    a_data.mupdate_range_subset[of m l m' _ "v"]
     mvalue_update_obtain[OF assms(1)]
-  apply (cases "mlookup m0 is1 l1")
+  apply (cases "mlookup m is l")
   apply (auto simp add: mupdate.simps list_update_safe_def split:if_split_asm)
   by fastforce
 
 lemma range_some_mupdate_1:
-  assumes "mupdate is1 (l1, v, m0) = Some m1"
-      and "mlookup m0 is2 l2 = Some l2'"
-      and "m0 $ l2' = Some v"
-      and "adisjoined m0 (the (arange m0 l1))"
-      and "the (arange m0 l1) |\<inter>| the (arange m0 l2) = {||}"
-      and "arange m0 l2 = Some (the (arange m0 l2))"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-    shows "arange m1 l1 = Some (the (arange m1 l1))"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l3"
+      and "m $ l3 = Some v"
+      and "adisjoined m (the (arange m l1))"
+      and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
+      and "arange m l2 = Some (the (arange m l2))"
+      and "arange m l1 = Some (the (arange m l1))"
+    shows "arange m' l1 = Some (the (arange m' l1))"
 proof -
   from assms(1) obtain l
-    where l_def: "mlookup m0 is1 l1 = Some l"
-    and *: "l < length m0"
-    and **: "m1 = m0[l:=v]" using mvalue_update_obtain by metis
-  then have 0: "m1 $ l = m0 $ l2'" by (simp add: assms(3))
-  moreover from assms(7) obtain L1 where L1_def: "arange m0 l1 = Some L1" by simp
-  moreover from assms(2,6) obtain L2 where L2_def: "arange m0 l2' = Some L2" and *: "L2 |\<subseteq>| the (arange m0 l2)"
+    where l_def: "mlookup m is1 l1 = Some l"
+    and *: "l < length m"
+    and **: "m' = m[l:=v]" using mvalue_update_obtain by metis
+  then have 0: "m' $ l = m $ l3" by (simp add: assms(3))
+  moreover from assms(7) obtain L1 where L1_def: "arange m l1 = Some L1" by simp
+  moreover from assms(2,6) obtain L2 where L2_def: "arange m l3 = Some L2" and *: "L2 |\<subseteq>| the (arange m l2)"
     by (metis a_data.range_def a_data.range_safe_mlookup_range)
-  moreover from L1_def obtain L1' where "arange m0 l = Some L1'" using l_def
+  moreover from L1_def obtain L1' where "arange m l = Some L1'" using l_def
     by (metis a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have "\<forall>l|\<in>|L1 |-| L1'. m1 $ l = m0 $ l"
+  moreover have "\<forall>l|\<in>|L1 |-| L1'. m' $ l = m $ l"
   proof
     fix l' assume "l' |\<in>|L1 |-| L1'"
     moreover have "l |\<notin>| L1 |-| L1'"
-      by (meson \<open>arange m0 l = Some L1'\<close> fminusD2 a_data.range_subs)
+      by (meson \<open>arange m l = Some L1'\<close> fminusD2 a_data.range_subs)
     ultimately have "l \<noteq> l'" by blast
-    then show "m1 $ l' = m0 $ l'" unfolding nth_safe_def using ** by simp
+    then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by simp
   qed
-  moreover have "\<forall>l|\<in>|L2. m1 $ l = m0 $ l"
+  moreover have "\<forall>l|\<in>|L2. m' $ l = m $ l"
   proof
     fix l' assume "l'|\<in>|L2"
     moreover have "l |\<in>|L1"
       using L1_def l_def a_data.range_mlookup by blast
     ultimately have "l \<noteq> l'" using assms(5) L1_def L2_def * by auto
-    then show "m1 $ l' = m0 $ l'" unfolding nth_safe_def using ** by (simp)
+    then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by (simp)
   qed
-  moreover from assms(4) have "adisjoined m0 L1" using L1_def by auto
-  moreover have "the (locations m0 is1 l1) |\<inter>| L2 = {||}"
+  moreover from assms(4) have "adisjoined m L1" using L1_def by auto
+  moreover have "the (locations m is1 l1) |\<inter>| L2 = {||}"
   proof -
-    from l_def obtain LL where "locations m0 is1 l1 = Some LL"
+    from l_def obtain LL where "locations m is1 l1 = Some LL"
       using mlookup_locations_some by blast
     then have "LL |\<subseteq>| L1" using L1_def using a_data.range_locations by blast
     then show ?thesis using assms(5) *
-      using L1_def \<open>locations m0 is1 l1 = Some LL\<close> by auto
+      using L1_def \<open>locations m is1 l1 = Some LL\<close> by auto
   qed
   moreover have "l |\<notin>| L2"
   proof -
@@ -641,88 +641,88 @@ proof -
 qed
 
 lemma range_some_mupdate_2:
-  assumes "mupdate xs (l0, v, m0) = Some m1"
-    and "the (mlookup m0 xs l0) |\<notin>| the (arange m0 l)"
-    and "arange m0 l = Some (the (arange m0 l))"
-  shows "arange m1 l = Some (the (arange m1 l))"
+  assumes "mupdate is (l1, v, m) = Some m'"
+    and "the (mlookup m is l1) |\<notin>| the (arange m l2)"
+    and "arange m l2 = Some (the (arange m l2))"
+  shows "arange m' l2 = Some (the (arange m' l2))"
 proof -
   obtain l'
-    where 0: "mlookup m0 xs l0 = Some l'"
-    and m'_def: "m1 = m0[l':=v]"
+    where 0: "mlookup m is l1 = Some l'"
+    and m'_def: "m' = m[l':=v]"
   using mvalue_update_obtain[OF assms(1)] by auto
-  moreover from assms(2) have "\<forall>l''|\<in>|the (arange m0 l). m1 $ l'' = m0 $ l''"
+  moreover from assms(2) have "\<forall>l''|\<in>|the (arange m l2). m' $ l'' = m $ l''"
     using 0 m'_def unfolding nth_safe_def apply (simp split:if_split_asm)
     by (metis nth_list_update_neq)
-  ultimately show ?thesis using a_data.range_same[of m0 l] by (metis assms(3))
+  ultimately show ?thesis using a_data.range_same[of m l2] by (metis assms(3))
 qed
 
 lemma range_disj_write:
-assumes "Memory.write z m0 = (laa, m1)"
-    and "arange m0 x1 = Some (the (arange m0 x1))"
-    and "arange m0 la = Some (the (arange m0 la))"
-    and "the (arange m0 x1) |\<inter>| the (arange m0 la) = {||}"
-  shows "the (arange m1 x1) |\<inter>| the (arange m1 la) = {||}"
+assumes "Memory.write a m = (l1, m')"
+    and "arange m l2 = Some (the (arange m l2))"
+    and "arange m l3 = Some (the (arange m l3))"
+    and "the (arange m l2) |\<inter>| the (arange m l3) = {||}"
+  shows "the (arange m' l2) |\<inter>| the (arange m' l3) = {||}"
 proof -
-  from assms(1) have "prefix m0 m1"
+  from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  moreover from assms(2) obtain L where "arange m0 x1 = Some L" by blast
-  ultimately have "arange m1 x1 = Some L" using a_data.range_prefix by auto
-  moreover from assms(3) obtain L' where L'_def: "arange m0 la = Some L'" by blast
-  moreover have "arange m1 la = Some L'" using L'_def `prefix m0 m1` a_data.range_prefix by auto
+  moreover from assms(2) obtain L where "arange m l2 = Some L" by blast
+  ultimately have "arange m' l2 = Some L" using a_data.range_prefix by auto
+  moreover from assms(3) obtain L' where L'_def: "arange m l3 = Some L'" by blast
+  moreover have "arange m' l3 = Some L'" using L'_def `prefix m m'` a_data.range_prefix by auto
   ultimately show ?thesis using assms(4)
-    by (simp add: \<open>arange m0 x1 = Some L\<close>)
+    by (simp add: \<open>arange m l2 = Some L\<close>)
 qed
 
 lemma range_disj_mupdate:
-  assumes "mupdate is1 (l1, v, m0) = Some m1"
-      and "mlookup m0 is2 l2 = Some l2'"
-      and "m0 $ l2' = Some v"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-      and "arange m0 l2 = Some (the (arange m0 l2))"
-      and "arange m0 la = Some (the (arange m0 la))"
-      and "the (arange m0 l1) |\<inter>| the (arange m0 l2) = {||}"
-      and "the (mlookup m0 is1 l1) |\<notin>| the (arange m0 la)"
-      and "adisjoined m0 (the (arange m0 l1))"
-      and "the (arange m0 l1) |\<inter>| the (arange m0 la) = {||}"
-      and "the (arange m0 l2) |\<inter>| the (arange m0 la) = {||}"
-    shows "the (arange m1 l1) |\<inter>| the (arange m1 la) = {||}"
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l3"
+      and "m $ l3 = Some v"
+      and "arange m l1 = Some (the (arange m l1))"
+      and "arange m l2 = Some (the (arange m l2))"
+      and "arange m l4 = Some (the (arange m l4))"
+      and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
+      and "the (mlookup m is1 l1) |\<notin>| the (arange m l4)"
+      and "adisjoined m (the (arange m l1))"
+      and "the (arange m l1) |\<inter>| the (arange m l4) = {||}"
+      and "the (arange m l2) |\<inter>| the (arange m l4) = {||}"
+    shows "the (arange m' l1) |\<inter>| the (arange m' l4) = {||}"
 proof -
   from assms(1) obtain l
-    where l_def: "mlookup m0 is1 l1 = Some l"
-    and *: "l < length m0"
-    and **: "m1 = m0[l:=v]" using mvalue_update_obtain by metis
-  then have 0: "m1 $ l = m0 $ l2'" by (simp add: assms(3))
-  moreover obtain L0 where "arange m1 l1 = Some L0" using range_some_mupdate_1[OF assms(1,2,3,9,7,5,4)] by simp
-  moreover from assms(4) obtain L1 where L1_def: "arange m0 l1 = Some L1" by simp
-  moreover from assms(5) obtain L2 where L2_def: "arange m0 l2' = Some L2" and ***: "L2 |\<subseteq>| the (arange m0 l2)"
+    where l_def: "mlookup m is1 l1 = Some l"
+    and *: "l < length m"
+    and **: "m' = m[l:=v]" using mvalue_update_obtain by metis
+  then have 0: "m' $ l = m $ l3" by (simp add: assms(3))
+  moreover obtain L0 where "arange m' l1 = Some L0" using range_some_mupdate_1[OF assms(1,2,3,9,7,5,4)] by simp
+  moreover from assms(4) obtain L1 where L1_def: "arange m l1 = Some L1" by simp
+  moreover from assms(5) obtain L2 where L2_def: "arange m l3 = Some L2" and ***: "L2 |\<subseteq>| the (arange m l2)"
     by (metis assms(2) a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have "arange m0 l = Some (the (arange m0 l))"
+  moreover have "arange m l = Some (the (arange m l))"
     by (metis L1_def l_def option.sel a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have "\<forall>l|\<in>|L1 |-| the (arange m0 l). m1 $ l = m0 $ l" using ** unfolding nth_safe_def apply (simp split:if_split_asm)
+  moreover have "\<forall>l|\<in>|L1 |-| the (arange m l). m' $ l = m $ l" using ** unfolding nth_safe_def apply (simp split:if_split_asm)
     by (metis Diff_iff calculation(6) nth_list_update_neq a_data.range_subs)
-  moreover have "\<forall>l|\<in>|the (arange m0 l2). m1 $ l = m0 $ l"
+  moreover have "\<forall>l|\<in>|the (arange m l2). m' $ l = m $ l"
   proof
-    fix l' assume "l'|\<in>|the (arange m0 l2)"
-    moreover from l_def have "l|\<in>|the (arange m0 l1)" using a_data.range_mlookup[OF L1_def] L1_def by simp
+    fix l' assume "l'|\<in>|the (arange m l2)"
+    moreover from l_def have "l|\<in>|the (arange m l1)" using a_data.range_mlookup[OF L1_def] L1_def by simp
     ultimately have "l' \<noteq> l" using assms(7) L1_def L2_def by auto
-    then show "m1 $ l' = m0 $ l'" using ** unfolding nth_safe_def by simp
+    then show "m' $ l' = m $ l'" using ** unfolding nth_safe_def by simp
   qed
-  then have "\<forall>l|\<in>|L2. m1 $ l = m0 $ l" using *** by blast
-  moreover from assms(9) have "adisjoined m0 L1" using L1_def by simp
-  ultimately have "L0 |\<subseteq>| L1 |\<union>| L2" using range_update_subs[OF l_def 0, of L1 "the (arange m0 l)" L2 L0] by blast
-  moreover have "L2 |\<subseteq>| the (arange m0 l2)"
-    by (metis \<open>arange m0 l2' = Some L2\<close> assms(2,5) a_data.range_def a_data.mlookup_range_safe_subs)
-  moreover have "the (arange m0 la) = the (arange m1 la)"
+  then have "\<forall>l|\<in>|L2. m' $ l = m $ l" using *** by blast
+  moreover from assms(9) have "adisjoined m L1" using L1_def by simp
+  ultimately have "L0 |\<subseteq>| L1 |\<union>| L2" using range_update_subs[OF l_def 0, of L1 "the (arange m l)" L2 L0] by blast
+  moreover have "L2 |\<subseteq>| the (arange m l2)"
+    by (metis \<open>arange m l3 = Some L2\<close> assms(2,5) a_data.range_def a_data.mlookup_range_safe_subs)
+  moreover have "the (arange m l4) = the (arange m' l4)"
   proof -
-    obtain L where L_def: "arange m0 la = Some L" using assms(6) by simp
-    moreover from assms(8) ** * have "\<forall>l |\<in>| L. m0$l = m1$l" unfolding nth_safe_def l_def apply (auto split:if_split_asm)
+    obtain L where L_def: "arange m l4 = Some L" using assms(6) by simp
+    moreover from assms(8) ** * have "\<forall>l |\<in>| L. m$l = m'$l" unfolding nth_safe_def l_def apply (auto split:if_split_asm)
       by (metis calculation nth_list_update_neq option.sel)
-    ultimately have "arange m1 la = Some L"
+    ultimately have "arange m' l4 = Some L"
       by (metis a_data.range_same)
     then show ?thesis using L_def by simp
   qed
   ultimately show ?thesis using assms(10,11)
-    using \<open>arange m1 l1 = Some L0\<close> L1_def by auto
+    using \<open>arange m' l1 = Some L0\<close> L1_def by auto
 qed
 
 subsection \<open>Memory Lookup and Memory Locations\<close>
