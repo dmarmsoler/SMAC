@@ -47,7 +47,7 @@ lemma (in Contract) example:
 
   apply (rule pred_some_read)
   apply (erule read_mupdate_value)
-  apply (erule disjoined_mupdate, simp, simp)
+  apply (erule disjoined_mupdate_1, simp, simp)
   apply (erule range_range_write_2)
   apply (erule range_range_write_1)
   apply (erule disjoined_range_write_2)
@@ -64,7 +64,6 @@ lemma (in Contract) example:
   apply (erule range_range_disj_write)
   apply (erule range_range_write_1)
   apply (erule write_read_1)
-  apply (erule range_range_write_1)
   apply (erule write_read_0)
   apply (erule write_read_0)
   by (simp add:alookup.simps)

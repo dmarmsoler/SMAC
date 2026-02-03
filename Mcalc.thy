@@ -943,30 +943,30 @@ proof -
 qed
 
 lemma disjoined_mupdate_value:
-  assumes "mupdate is (ml, mdata.Value v, state.Memory sa) = Some yg"
-      and "arange (state.Memory sa) ml = Some (the (arange (state.Memory sa) ml))"
-      and "adisjoined (state.Memory sa) (the (arange (state.Memory sa) ml))"
-    shows "adisjoined yg (the (arange yg ml))"
+  assumes "mupdate is (l, mdata.Value v, m) = Some m'"
+      and "arange m l = Some (the (arange m l))"
+      and "adisjoined m (the (arange m l))"
+    shows "adisjoined m' (the (arange m' l))"
 unfolding a_data.disjoined_def
 proof (rule, rule, rule)
   fix x xs
-  assume 1: "x |\<in>| the (arange yg ml)"
-     and 2: "yg $ x = Some (mdata.Array xs)"
+  assume 1: "x |\<in>| the (arange m' l)"
+     and 2: "m' $ x = Some (mdata.Array xs)"
 
-  from assms(1) obtain l
-    where l_def: "mlookup (state.Memory sa) is ml = Some l"
-    and "l < length (state.Memory sa)"
-    and yg_def: "yg = (state.Memory sa)[l:= mdata.Value v]"
+  from assms(1) obtain ll
+    where l_def: "mlookup (m) is l = Some ll"
+    and "ll < length (m)"
+    and yg_def: "m' = (m)[ll:= mdata.Value v]"
     using mvalue_update_obtain by metis
 
   then obtain LL
-    where "arange yg ml = Some LL"
-      and "LL |\<subseteq>| the (arange (state.Memory sa) ml)"
-    using assms(2) a_data.mupdate_range_subset[of "(state.Memory sa)" ml yg l]
+    where "arange m' l = Some LL"
+      and "LL |\<subseteq>| the (arange (m) l)"
+    using assms(2) a_data.mupdate_range_subset[of "(m)" l m' ll]
     by blast
 
-  then have 3: "x |\<in>| the (arange (state.Memory sa) ml)" using 1 by auto
-  moreover have 4: "state.Memory sa $ x = Some (mdata.Array xs)" using 2 yg_def
+  then have 3: "x |\<in>| the (arange (m) l)" using 1 by auto
+  moreover have 4: "m $ x = Some (mdata.Array xs)" using 2 yg_def
     apply (auto simp add:nth_safe_def split:if_split_asm)
     by (metis mdata.distinct(1) nth_list_update_eq nth_list_update_neq)
 
@@ -975,153 +975,153 @@ proof (rule, rule, rule)
         i \<noteq> j \<and>
         xs $ i = Some i' \<and>
         xs $ j = Some j' \<and>
-        arange (state.Memory sa) i' = Some L \<and> arange (state.Memory sa) j' = Some L'
+        arange (m) i' = Some L \<and> arange (m) j' = Some L'
       \<longrightarrow> L |\<inter>| L' = {||})"
     using assms(3) by (auto simp add:a_data.disjoined_def)
 
   show "\<forall>i j i' j' L L'.
           i \<noteq> j \<and> xs $ i = Some i' \<and> xs $ j = Some j'
-          \<and> arange yg i' = Some L \<and> arange yg j' = Some L'
+          \<and> arange m' i' = Some L \<and> arange m' j' = Some L'
         \<longrightarrow> L |\<inter>| L' = {||}"
   proof (rule, rule, rule, rule, rule, rule, rule, (erule conjE)+)
     fix i j i' j' L L'
     assume "i \<noteq> j"
        and "xs $ i = Some i'"
        and "xs $ j = Some j'"
-       and L_def: "arange yg i' = Some L"
-       and L'_def: "arange yg j' = Some L'"
-    have 1: "arange (state.Memory sa) i' = Some (the (arange (state.Memory sa) i'))"
+       and L_def: "arange m' i' = Some L"
+       and L'_def: "arange m' j' = Some L'"
+    have 1: "arange (m) i' = Some (the (arange (m) i'))"
       by (metis (lifting) 3 4 \<open>xs $ i = Some i'\<close> assms(2) option.sel a_data.range_def a_data.range_safe_in_range)
-    have 2: "arange (state.Memory sa) j' = Some (the (arange (state.Memory sa) j'))"
+    have 2: "arange (m) j' = Some (the (arange (m) j'))"
       by (metis (lifting) 3 4 \<open>xs $ j = Some j'\<close> assms(2) option.sel a_data.range_def a_data.range_safe_in_range)
-    from 1 have "L |\<subseteq>| the (arange (state.Memory sa) i')"
-      using L_def yg_def \<open>l < length (state.Memory sa)\<close>
-        a_data.mupdate_range_subset[of "(state.Memory sa)" i' yg l v]
+    from 1 have "L |\<subseteq>| the (arange (m) i')"
+      using L_def yg_def \<open>ll < length (m)\<close>
+        a_data.mupdate_range_subset[of "(m)" i' m' ll v]
       by auto
-    moreover from 2 have "L' |\<subseteq>| the (arange (state.Memory sa) j')"
-      using L'_def yg_def \<open>l < length (state.Memory sa)\<close>
-        a_data.mupdate_range_subset[of "(state.Memory sa)" j' yg l v] 
+    moreover from 2 have "L' |\<subseteq>| the (arange (m) j')"
+      using L'_def yg_def \<open>ll < length (m)\<close>
+        a_data.mupdate_range_subset[of "(m)" j' m' ll v] 
       by auto
     moreover have
-      "the (arange (state.Memory sa) i') |\<inter>| the (arange (state.Memory sa) j') = {||}"
+      "the (arange (m) i') |\<inter>| the (arange (m) j') = {||}"
       using 1 2 5 \<open>i \<noteq> j\<close> \<open>xs $ i = Some i'\<close> \<open>xs $ j = Some j'\<close> by auto
     ultimately show "L |\<inter>| L' = {||}" by auto
   qed
 qed
 
-lemma disjoined_mupdate:
-  assumes "mupdate is1 (l1, v, m0) = Some m1"
-      and "mlookup m0 is2 l2 = Some l2'"
-      and "m0 $ l2' = Some v"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-      and "adisjoined m0 (the (arange m0 l1))"
-      and "arange m0 l2 = Some (the (arange m0 l2))"
-      and "adisjoined m0 (the (arange m0 l2))"
-      and "the (arange m0 l1) |\<inter>| the (arange m0 l2) = {||}"
-    shows "adisjoined m1 (the (arange m1 l1))"
+lemma disjoined_mupdate_1:
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l2'"
+      and "m $ l2' = Some v"
+      and "arange m l1 = Some (the (arange m l1))"
+      and "adisjoined m (the (arange m l1))"
+      and "arange m l2 = Some (the (arange m l2))"
+      and "adisjoined m (the (arange m l2))"
+      and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
+    shows "adisjoined m' (the (arange m' l1))"
 proof -
   from assms(1) obtain l
-    where l_def: "mlookup m0 is1 l1 = Some l"
-    and *: "l < length m0"
-    and **: "m1 = m0[l:=v]" using mvalue_update_obtain by metis
-  then have 0: "m1 $ l = m0 $ l2'" by (simp add: assms(3))
-  moreover have 2: "arange_safe {||} m0 l = Some (the (arange_safe {||} m0 l))"
+    where l_def: "mlookup m is1 l1 = Some l"
+    and *: "l < length m"
+    and **: "m' = m[l:=v]" using mvalue_update_obtain by metis
+  then have 0: "m' $ l = m $ l2'" by (simp add: assms(3))
+  moreover have 2: "arange_safe {||} m l = Some (the (arange_safe {||} m l))"
     by (metis assms(4) l_def option.sel a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have 4: "\<forall>l|\<in>|the (arange_safe {||} m0 l1) |-| the (arange_safe {||} m0 l). m1 $ l = m0 $ l"
+  moreover have 4: "\<forall>l|\<in>|the (arange_safe {||} m l1) |-| the (arange_safe {||} m l). m' $ l = m $ l"
   proof
-    fix l' assume "l' |\<in>|the (arange_safe {||} m0 l1) |-| (the (arange_safe {||} m0 l))"
-    moreover have "l |\<notin>| the (arange_safe {||} m0 l1) |-| (the (arange_safe {||} m0 l))"
+    fix l' assume "l' |\<in>|the (arange_safe {||} m l1) |-| (the (arange_safe {||} m l))"
+    moreover have "l |\<notin>| the (arange_safe {||} m l1) |-| (the (arange_safe {||} m l))"
       by (meson "2" fminusD2 a_data.range_safe_subs)
     ultimately have "l \<noteq> l'" by blast
-    then show "m1 $ l' = m0 $ l'" unfolding nth_safe_def using ** by (simp)
+    then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by (simp)
   qed
-  moreover have "\<forall>l|\<in>|the (arange_safe {||} m0 l2). m1 $ l = m0 $ l"
+  moreover have "\<forall>l|\<in>|the (arange_safe {||} m l2). m' $ l = m $ l"
   proof
-    fix l' assume "l'|\<in>| the (arange_safe {||} m0 l2)"
-    moreover have "l |\<in>| the (arange_safe {||} m0 l1)"
+    fix l' assume "l'|\<in>| the (arange_safe {||} m l2)"
+    moreover have "l |\<in>| the (arange_safe {||} m l1)"
       by (metis assms(4) l_def a_data.range_def a_data.range_mlookup)
     ultimately have "l \<noteq> l'" using assms(5,8)
       by (metis fempty_iff finterI a_data.range_def)
-    then show "m1 $ l' = m0 $ l'" unfolding nth_safe_def using ** by simp
+    then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by simp
   qed
-  then have 5: "\<forall>l|\<in>|the (arange_safe {||} m0 l2'). m1 $ l = m0 $ l"
+  then have 5: "\<forall>l|\<in>|the (arange_safe {||} m l2'). m' $ l = m $ l"
     by (metis assms(2,6) fsubsetD option.sel a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have 6: "locations m0 is1 l1 = Some (the (locations m0 is1 l1))"
+  moreover have 6: "locations m is1 l1 = Some (the (locations m is1 l1))"
     by (simp add: l_def mlookup_locations_some)
-  moreover have "the (locations m0 is1 l1) |\<inter>| the (arange_safe {||} m0 l2) = {||}"
+  moreover have "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l2) = {||}"
     by (smt (verit, best) "6" assms(4,8) finter_absorb1 finter_assoc finter_commute finter_fempty_left a_data.range_def
         a_data.range_locations)
-  then have 7: "the (locations m0 is1 l1) |\<inter>| the (arange_safe {||} m0 l2') = {||}"
+  then have 7: "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l2') = {||}"
     by (smt (verit, best) assms(2,6) fsubset_fempty inf.cobounded1 inf.cobounded2 inf.order_iff inf_mono
         option.sel a_data.range_def a_data.range_safe_mlookup_range)
-  moreover have "l |\<notin>| the (arange_safe {||} m0 l2)" using assms(5)
+  moreover have "l |\<notin>| the (arange_safe {||} m l2)" using assms(5)
     by (metis assms(4,8) disjoint_iff_fnot_equal l_def a_data.range_def a_data.range_mlookup)
-  then have 8: "l |\<notin>| the (arange_safe {||} m0 l2')"
+  then have 8: "l |\<notin>| the (arange_safe {||} m l2')"
     by (metis assms(2,6) finterD1 inf.absorb_iff2 option.sel a_data.range_def
         a_data.range_safe_mlookup_range)
-  moreover have 9: "arange_safe {||} m0 l1 = Some (the (arange_safe {||} m0 l1))"
+  moreover have 9: "arange_safe {||} m l1 = Some (the (arange_safe {||} m l1))"
     by (metis assms(4) a_data.range_def)
-  ultimately obtain L where L_def: "arange_safe {||} m1 l1 = Some L"
+  ultimately obtain L where L_def: "arange_safe {||} m' l1 = Some L"
     using a_data.update_some_obtains_range[OF l_def 0 _ 2 _ 4 5 _ 6 7 8 ] assms(5)
     by (metis assms(2,6) finter_fempty_left option.sel a_data.range_def a_data.range_safe_mlookup_range)
   
-  moreover from 9 have 9: "data.range_safe {||} m0 l1 = Some (the (data.range_safe {||} m0 l1))"
+  moreover from 9 have 9: "data.range_safe {||} m l1 = Some (the (data.range_safe {||} m l1))"
     by (metis arange_safe_def)
-  moreover from 2 have 2: "data.range_safe {||} m0 l = Some (the (arange_safe {||} m0 l))"
+  moreover from 2 have 2: "data.range_safe {||} m l = Some (the (arange_safe {||} m l))"
     by (metis arange_safe_def)
-  moreover have 10: "data.range_safe {||} m0 l2' = Some (the (data.range_safe {||} m0 l2'))"
+  moreover have 10: "data.range_safe {||} m l2' = Some (the (data.range_safe {||} m l2'))"
     by (metis assms(2,6) data.range_safe_mlookup_range arange_def arange_safe_def option.sel
         a_data.range_def)
-  moreover from 4 have 4: "\<forall>l|\<in>|the (data.range_safe {||} m0 l1) |-| the (arange_safe {||} m0 l). m1 $ l = m0 $ l"
+  moreover from 4 have 4: "\<forall>l|\<in>|the (data.range_safe {||} m l1) |-| the (arange_safe {||} m l). m' $ l = m $ l"
     by (metis arange_safe_def)
-  moreover from 5 have 5: "\<forall>l|\<in>|the (data.range_safe {||} m0 l2'). m1 $ l = m0 $ l"
+  moreover from 5 have 5: "\<forall>l|\<in>|the (data.range_safe {||} m l2'). m' $ l = m $ l"
     by (metis arange_safe_def)
-  moreover have 11: "storage_data.disjoined m0 (the (data.range_safe {||} m0 l1))"
+  moreover have 11: "storage_data.disjoined m (the (data.range_safe {||} m l1))"
     by (metis assms(5) adisjoined_def data.range_def arange_def)
-  moreover have 12: "storage_data.disjoined m0 (the (data.range_safe {||} m0 l2'))"
+  moreover have 12: "storage_data.disjoined m (the (data.range_safe {||} m l2'))"
   proof -
-    from assms(7) have "storage_data.disjoined m0 (the (arange m0 l2))"
+    from assms(7) have "storage_data.disjoined m (the (arange m l2))"
       by (simp add: adisjoined_def)
     with 10 show ?thesis
       by (metis (no_types, lifting) assms(2,6) adisjoined_def data.range_safe_mlookup_range arange_def
           arange_safe_def option.sel a_data.disjoined_subs a_data.range_def)
   qed
-  moreover from L_def have 13: "data.range_safe {||} m1 l1 = Some L"
+  moreover from L_def have 13: "data.range_safe {||} m' l1 = Some L"
     by (metis arange_safe_def)
-  moreover have "the (data.range_safe {||} m0 l1) |-| the (arange_safe {||} m0 l) |\<inter>| the (data.range_safe {||} m0 l2') =
+  moreover have "the (data.range_safe {||} m l1) |-| the (arange_safe {||} m l) |\<inter>| the (data.range_safe {||} m l2') =
     {||}"
   proof -
-    from assms(8) have "the (data.range_safe {||} m0 l1) |\<inter>| the (data.range_safe {||} m0 l2) = {||}"
+    from assms(8) have "the (data.range_safe {||} m l1) |\<inter>| the (data.range_safe {||} m l2) = {||}"
       by (simp add: arange_safe_def a_data.range_def)
-    then have "the (data.range_safe {||} m0 l1) |\<inter>| the (data.range_safe {||} m0 l2') = {||}"
+    then have "the (data.range_safe {||} m l1) |\<inter>| the (data.range_safe {||} m l2') = {||}"
       by (smt (verit, best) "10" assms(2,6) disjoint_iff_fnot_equal fsubsetD arange_safe_def range_storage_safe_def
           a_data.range_def storage_data.mlookup_range_safe_subs)
     then show ?thesis by blast
   qed
-  ultimately have "storage_data.disjoined m1 L" using data.disjoined_update [OF l_def 0 9 2 10 4 5 11 12 13] by blast
+  ultimately have "storage_data.disjoined m' L" using data.disjoined_update [OF l_def 0 9 2 10 4 5 11 12 13] by blast
   then show ?thesis
     by (simp add: "13" adisjoined_def data.range_def arange_def)
 qed
 
-lemma disjoined_mupdate2:
-  assumes "mupdate is (l0, v, m0) = Some m1"
-      and "arange m0 l1 = Some (the (arange m0 l1))"
-      and "the (mlookup m0 is l0) |\<notin>| the (arange m0 l1)"
-      and "adisjoined m0 (the (arange m0 l1))"
-    shows "adisjoined m1 (the (arange m1 l1))"
+lemma disjoined_mupdate_2:
+  assumes "mupdate is (l1, v, m) = Some m'"
+      and "arange m l2 = Some (the (arange m l2))"
+      and "the (mlookup m is l1) |\<notin>| the (arange m l2)"
+      and "adisjoined m (the (arange m l2))"
+    shows "adisjoined m' (the (arange m' l2))"
 proof -
   from assms(1) obtain l
-    where l_def: "mlookup m0 is l0 = Some l"
-    and *: "l < length m0"
-    and **: "m1 = m0[l:=v]" using mvalue_update_obtain by metis
+    where l_def: "mlookup m is l1 = Some l"
+    and *: "l < length m"
+    and **: "m' = m[l:=v]" using mvalue_update_obtain by metis
   
-  from assms(2) obtain L where L_def: "arange m0 l1 = Some L" by blast
-  moreover from assms(3) l_def * ** have "\<forall>l'|\<in>|L. m1 $ l' = m0 $ l'" unfolding nth_safe_def apply (auto split:if_split)
+  from assms(2) obtain L where L_def: "arange m l2 = Some L" by blast
+  moreover from assms(3) l_def * ** have "\<forall>l'|\<in>|L. m' $ l' = m $ l'" unfolding nth_safe_def apply (auto split:if_split)
     by (metis calculation nth_list_update_neq option.sel)
-  ultimately have *: "arange m1 l1 = Some L" using assms(3) a_data.range_same[of m0 l1 L] by blast
-  then have "\<forall>l|\<in>|the (arange m0 l1). m0 $ l = m1 $ l" using L_def
-    by (simp add: \<open>\<forall>l'|\<in>|L. m1 $ l' = m0 $ l'\<close>)
-  then have "adisjoined m1 (the (arange m0 l1))" using a_data.disjoined_disjoined[OF assms(4,2)] by blast
+  ultimately have *: "arange m' l2 = Some L" using assms(3) a_data.range_same[of m l2 L] by blast
+  then have "\<forall>l|\<in>|the (arange m l2). m $ l = m' $ l" using L_def
+    by (simp add: \<open>\<forall>l'|\<in>|L. m' $ l' = m $ l'\<close>)
+  then have "adisjoined m' (the (arange m l2))" using a_data.disjoined_disjoined[OF assms(4,2)] by blast
   then show ?thesis using * L_def by auto 
 qed
 
@@ -1163,7 +1163,7 @@ method mc uses lookup
   | (erule disjoined_range_write_1)
   | (erule disjoined_range_write_2)
   | (erule disjoined_mupdate_value)
-  | (erule disjoined_mupdate, solves\<open>simp\<close>, solves\<open>simp\<close>)
+  | (erule disjoined_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule nth_some, solves\<open>simp\<close>)
   | (erule mlookup_mupdate, solves\<open>simp\<close>)
   | (erule mlookup_some_write, (slookup lookup: lookup)?)
@@ -1187,6 +1187,6 @@ method mc uses lookup
   | (erule mlookup_locations_write_3)
   | (erule mlookup_locations_mupdate_1, assumption, assumption, solves\<open>simp\<close>)
   | (erule mlookup_locations_mupdate_2, assumption, assumption, solves\<open>simp\<close>)
-  | (erule disjoined_mupdate2)
+  | (erule disjoined_mupdate_2)
 
 end
