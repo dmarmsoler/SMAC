@@ -552,9 +552,9 @@ lemma range_range_write_1:
   using Memory.write_loc[OF assms(1)] unfolding s_union_fs_def pred_some_def by auto
 
 lemma range_range_write_2:
-  assumes "Memory.write a m = (l, m')"
-    and "arange m l' = Some (the (arange m l'))"
-  shows "arange m' l' = Some (the (arange m' l'))"
+  assumes "Memory.write a m = (l1, m')"
+    and "arange m l2 = Some (the (arange m l2))"
+  shows "arange m' l2 = Some (the (arange m' l2))"
 proof -
   from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
