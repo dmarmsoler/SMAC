@@ -1012,8 +1012,8 @@ qed
 
 lemma disjoined_mupdate_1:
   assumes "mupdate is1 (l1, v, m) = Some m'"
-      and "mlookup m is2 l2 = Some l2'"
-      and "m $ l2' = Some v"
+      and "mlookup m is2 l2 = Some l3"
+      and "m $ l3 = Some v"
       and "arange m l1 = Some (the (arange m l1))"
       and "adisjoined m (the (arange m l1))"
       and "arange m l2 = Some (the (arange m l2))"
@@ -1025,7 +1025,7 @@ proof -
     where l_def: "mlookup m is1 l1 = Some l"
     and *: "l < length m"
     and **: "m' = m[l:=v]" using mvalue_update_obtain by metis
-  then have 0: "m' $ l = m $ l2'" by (simp add: assms(3))
+  then have 0: "m' $ l = m $ l3" by (simp add: assms(3))
   moreover have 2: "arange_safe {||} m l = Some (the (arange_safe {||} m l))"
     by (metis assms(4) l_def option.sel a_data.range_def a_data.range_safe_mlookup_range)
   moreover have 4: "\<forall>l|\<in>|the (arange_safe {||} m l1) |-| the (arange_safe {||} m l). m' $ l = m $ l"
@@ -1045,19 +1045,19 @@ proof -
       by (metis fempty_iff finterI a_data.range_def)
     then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by simp
   qed
-  then have 5: "\<forall>l|\<in>|the (arange_safe {||} m l2'). m' $ l = m $ l"
+  then have 5: "\<forall>l|\<in>|the (arange_safe {||} m l3). m' $ l = m $ l"
     by (metis assms(2,6) fsubsetD option.sel a_data.range_def a_data.range_safe_mlookup_range)
   moreover have 6: "locations m is1 l1 = Some (the (locations m is1 l1))"
     by (simp add: l_def mlookup_locations_some)
   moreover have "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l2) = {||}"
     by (smt (verit, best) "6" assms(4,8) finter_absorb1 finter_assoc finter_commute finter_fempty_left a_data.range_def
         a_data.range_locations)
-  then have 7: "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l2') = {||}"
+  then have 7: "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l3) = {||}"
     by (smt (verit, best) assms(2,6) fsubset_fempty inf.cobounded1 inf.cobounded2 inf.order_iff inf_mono
         option.sel a_data.range_def a_data.range_safe_mlookup_range)
   moreover have "l |\<notin>| the (arange_safe {||} m l2)" using assms(5)
     by (metis assms(4,8) disjoint_iff_fnot_equal l_def a_data.range_def a_data.range_mlookup)
-  then have 8: "l |\<notin>| the (arange_safe {||} m l2')"
+  then have 8: "l |\<notin>| the (arange_safe {||} m l3)"
     by (metis assms(2,6) finterD1 inf.absorb_iff2 option.sel a_data.range_def
         a_data.range_safe_mlookup_range)
   moreover have 9: "arange_safe {||} m l1 = Some (the (arange_safe {||} m l1))"
@@ -1070,16 +1070,16 @@ proof -
     by (metis arange_safe_def)
   moreover from 2 have 2: "data.range_safe {||} m l = Some (the (arange_safe {||} m l))"
     by (metis arange_safe_def)
-  moreover have 10: "data.range_safe {||} m l2' = Some (the (data.range_safe {||} m l2'))"
+  moreover have 10: "data.range_safe {||} m l3 = Some (the (data.range_safe {||} m l3))"
     by (metis assms(2,6) data.range_safe_mlookup_range arange_def arange_safe_def option.sel
         a_data.range_def)
   moreover from 4 have 4: "\<forall>l|\<in>|the (data.range_safe {||} m l1) |-| the (arange_safe {||} m l). m' $ l = m $ l"
     by (metis arange_safe_def)
-  moreover from 5 have 5: "\<forall>l|\<in>|the (data.range_safe {||} m l2'). m' $ l = m $ l"
+  moreover from 5 have 5: "\<forall>l|\<in>|the (data.range_safe {||} m l3). m' $ l = m $ l"
     by (metis arange_safe_def)
   moreover have 11: "storage_data.disjoined m (the (data.range_safe {||} m l1))"
     by (metis assms(5) adisjoined_def data.range_def arange_def)
-  moreover have 12: "storage_data.disjoined m (the (data.range_safe {||} m l2'))"
+  moreover have 12: "storage_data.disjoined m (the (data.range_safe {||} m l3))"
   proof -
     from assms(7) have "storage_data.disjoined m (the (arange m l2))"
       by (simp add: adisjoined_def)
@@ -1089,12 +1089,12 @@ proof -
   qed
   moreover from L_def have 13: "data.range_safe {||} m' l1 = Some L"
     by (metis arange_safe_def)
-  moreover have "the (data.range_safe {||} m l1) |-| the (arange_safe {||} m l) |\<inter>| the (data.range_safe {||} m l2') =
+  moreover have "the (data.range_safe {||} m l1) |-| the (arange_safe {||} m l) |\<inter>| the (data.range_safe {||} m l3) =
     {||}"
   proof -
     from assms(8) have "the (data.range_safe {||} m l1) |\<inter>| the (data.range_safe {||} m l2) = {||}"
       by (simp add: arange_safe_def a_data.range_def)
-    then have "the (data.range_safe {||} m l1) |\<inter>| the (data.range_safe {||} m l2') = {||}"
+    then have "the (data.range_safe {||} m l1) |\<inter>| the (data.range_safe {||} m l3) = {||}"
       by (smt (verit, best) "10" assms(2,6) disjoint_iff_fnot_equal fsubsetD arange_safe_def range_storage_safe_def
           a_data.range_def storage_data.mlookup_range_safe_subs)
     then show ?thesis by blast
