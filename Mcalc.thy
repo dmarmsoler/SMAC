@@ -22,7 +22,7 @@ lemma (in Contract) wp_assign_stack_kdvalue_memory[wprules]:
     shows "wp (assign_stack i xs (rvalue.Value v)) P E s"
   apply wp+
   using assms(1)
-  apply (simp add:stack_disjoined_def)
+  apply (simp add:stack_disjoint_def)
   apply wp+
   apply (auto simp add:memory_update_monad_def my_update_monad_def)
   apply wp+
@@ -47,7 +47,7 @@ lemma (in Contract) wp_assign_stack_memory[wprules]:
   shows "wp (assign_stack i is (rvalue.Memory l)) P E s"
   apply wp+
   using assms(1)
-  apply (simp add:stack_disjoined_def)
+  apply (simp add:stack_disjoint_def)
   apply wp+
   apply (auto simp add:memory_update_monad_def my_update_monad_def)
   apply (cases "is")
@@ -591,7 +591,7 @@ lemma range_some_mupdate_1:
   assumes "mupdate is1 (l1, v, m) = Some m'"
       and "mlookup m is2 l2 = Some l3"
       and "m $ l3 = Some v"
-      and "adisjoined m (the (arange m l1))"
+      and "adisjoint m (the (arange m l1))"
       and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
       and "arange m l2 = Some (the (arange m l2))"
       and "arange m l1 = Some (the (arange m l1))"
@@ -623,7 +623,7 @@ proof -
     ultimately have "l \<noteq> l'" using assms(5) L1_def L2_def * by auto
     then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by (simp)
   qed
-  moreover from assms(4) have "adisjoined m L1" using L1_def by auto
+  moreover from assms(4) have "adisjoint m L1" using L1_def by auto
   moreover have "the (locations m is1 l1) |\<inter>| L2 = {||}"
   proof -
     from l_def obtain LL where "locations m is1 l1 = Some LL"
@@ -683,7 +683,7 @@ lemma range_disj_mupdate:
       and "arange m l4 = Some (the (arange m l4))"
       and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
       and "the (mlookup m is1 l1) |\<notin>| the (arange m l4)"
-      and "adisjoined m (the (arange m l1))"
+      and "adisjoint m (the (arange m l1))"
       and "the (arange m l1) |\<inter>| the (arange m l4) = {||}"
       and "the (arange m l2) |\<inter>| the (arange m l4) = {||}"
     shows "the (arange m' l1) |\<inter>| the (arange m' l4) = {||}"
@@ -709,7 +709,7 @@ proof -
     then show "m' $ l' = m $ l'" using ** unfolding nth_safe_def by simp
   qed
   then have "\<forall>l|\<in>|L2. m' $ l = m $ l" using *** by blast
-  moreover from assms(9) have "adisjoined m L1" using L1_def by simp
+  moreover from assms(9) have "adisjoint m L1" using L1_def by simp
   ultimately have "L0 |\<subseteq>| L1 |\<union>| L2" using range_update_subs[OF l_def 0, of L1 "the (arange m l)" L2 L0] by blast
   moreover have "L2 |\<subseteq>| the (arange m l2)"
     by (metis \<open>arange m l3 = Some L2\<close> assms(2,5) a_data.range_def a_data.mlookup_range_safe_subs)
@@ -779,7 +779,7 @@ subsection \<open>Read Memory\<close>
 
 lemma read_mupdate_value:
   assumes "mupdate is (l, mdata.Value v, m) = Some m'"
-      and "adisjoined m (the (arange m l))"
+      and "adisjoint m (the (arange m l))"
       and "aread m l = Some a"
     shows "aread m' l = Some (the (aupdate is (adata.Value v) a))" 
 proof-
@@ -812,7 +812,7 @@ lemma read_mupdate_1:
   assumes "mupdate is1 (l1, v, m) = Some m'"
       and "mlookup m is2 l2 = Some l3"
       and "m $ l3 = Some v"
-      and "adisjoined m (the (arange m l1))"
+      and "adisjoint m (the (arange m l1))"
       and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
       and "aread m l1 = Some a1"
       and "aread m l2 = Some a2"
@@ -893,7 +893,7 @@ proof-
     by (simp add: a_data.read_def)
   moreover from assms(7) have "aread_safe {||} m l2 = Some a2"
     by (simp add: a_data.read_def)
-  moreover have "adisjoined m (the (arange_safe {||} m l1))"
+  moreover have "adisjoint m (the (arange_safe {||} m l1))"
     by (metis assms(4) a_data.range_def)
   ultimately show ?thesis using read_safe_lookup_update[OF l_def assms(2) 0 1 2 3 4 ]
     by (metis option.sel a_data.read_def)
@@ -919,36 +919,36 @@ qed
 
 subsection \<open>Disjointness\<close>
 
-lemma disjoined_range_write_1:
+lemma disjoint_range_write_1:
   assumes "Memory.write a m = (l, m')"
-    shows "adisjoined m' (the (arange m' l))"
+    shows "adisjoint m' (the (arange m' l))"
 proof -
   from assms(1) obtain L where "arange m' l = Some L" using range_range_write_1 by blast
-  then show ?thesis using write_adisjoined[OF assms(1)]
+  then show ?thesis using write_adisjoint[OF assms(1)]
     by (metis bot_fset.rep_eq empty_iff option.sel a_data.range_def)
 qed
 
-lemma disjoined_range_write_2:
+lemma disjoint_range_write_2:
   assumes "Memory.write a m = (l2, m')"
       and "arange m l1 = Some (the (arange m l1))"
-      and "adisjoined m (the (arange m l1))"
-    shows "adisjoined m' (the (arange m' l1))"
+      and "adisjoint m (the (arange m l1))"
+    shows "adisjoint m' (the (arange m' l1))"
 proof -
   from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
   moreover have "fset (the (arange m l1)) \<subseteq> loc m" using a_data.range_subs2 assms(2) by blast
-  ultimately have "adisjoined m' (the (arange m l1))" using a_data.disjoined_prefix[OF _ _ assms(3)] assms(2)
+  ultimately have "adisjoint m' (the (arange m l1))" using a_data.disjoint_prefix[OF _ _ assms(3)] assms(2)
     by (metis a_data.range_def a_data.range_prefix)
   then show ?thesis
     by (metis \<open>prefix m m'\<close> assms(2) data.range_prefix arange_def)
 qed
 
-lemma disjoined_mupdate_value:
+lemma disjoint_mupdate_value:
   assumes "mupdate is (l, mdata.Value v, m) = Some m'"
       and "arange m l = Some (the (arange m l))"
-      and "adisjoined m (the (arange m l))"
-    shows "adisjoined m' (the (arange m' l))"
-unfolding a_data.disjoined_def
+      and "adisjoint m (the (arange m l))"
+    shows "adisjoint m' (the (arange m' l))"
+unfolding a_data.disjoint_def
 proof (rule, rule, rule)
   fix x xs
   assume 1: "x |\<in>| the (arange m' l)"
@@ -978,7 +978,7 @@ proof (rule, rule, rule)
         xs $ j = Some j' \<and>
         arange (m) i' = Some L \<and> arange (m) j' = Some L'
       \<longrightarrow> L |\<inter>| L' = {||})"
-    using assms(3) by (auto simp add:a_data.disjoined_def)
+    using assms(3) by (auto simp add:a_data.disjoint_def)
 
   show "\<forall>i j i' j' L L'.
           i \<noteq> j \<and> xs $ i = Some i' \<and> xs $ j = Some j'
@@ -1010,16 +1010,16 @@ proof (rule, rule, rule)
   qed
 qed
 
-lemma disjoined_mupdate_1:
+lemma disjoint_mupdate_1:
   assumes "mupdate is1 (l1, v, m) = Some m'"
       and "mlookup m is2 l2 = Some l3"
       and "m $ l3 = Some v"
       and "arange m l1 = Some (the (arange m l1))"
-      and "adisjoined m (the (arange m l1))"
+      and "adisjoint m (the (arange m l1))"
       and "arange m l2 = Some (the (arange m l2))"
-      and "adisjoined m (the (arange m l2))"
+      and "adisjoint m (the (arange m l2))"
       and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
-    shows "adisjoined m' (the (arange m' l1))"
+    shows "adisjoint m' (the (arange m' l1))"
 proof -
   from assms(1) obtain l
     where l_def: "mlookup m is1 l1 = Some l"
@@ -1077,15 +1077,15 @@ proof -
     by (metis arange_safe_def)
   moreover from 5 have 5: "\<forall>l|\<in>|the (data.range_safe {||} m l3). m' $ l = m $ l"
     by (metis arange_safe_def)
-  moreover have 11: "storage_data.disjoined m (the (data.range_safe {||} m l1))"
-    by (metis assms(5) adisjoined_def data.range_def arange_def)
-  moreover have 12: "storage_data.disjoined m (the (data.range_safe {||} m l3))"
+  moreover have 11: "storage_data.disjoint m (the (data.range_safe {||} m l1))"
+    by (metis assms(5) adisjoint_def data.range_def arange_def)
+  moreover have 12: "storage_data.disjoint m (the (data.range_safe {||} m l3))"
   proof -
-    from assms(7) have "storage_data.disjoined m (the (arange m l2))"
-      by (simp add: adisjoined_def)
+    from assms(7) have "storage_data.disjoint m (the (arange m l2))"
+      by (simp add: adisjoint_def)
     with 10 show ?thesis
-      by (metis (no_types, lifting) assms(2,6) adisjoined_def data.range_safe_mlookup_range arange_def
-          arange_safe_def option.sel a_data.disjoined_subs a_data.range_def)
+      by (metis (no_types, lifting) assms(2,6) adisjoint_def data.range_safe_mlookup_range arange_def
+          arange_safe_def option.sel a_data.disjoint_subs a_data.range_def)
   qed
   moreover from L_def have 13: "data.range_safe {||} m' l1 = Some L"
     by (metis arange_safe_def)
@@ -1099,17 +1099,17 @@ proof -
           a_data.range_def storage_data.mlookup_range_safe_subs)
     then show ?thesis by blast
   qed
-  ultimately have "storage_data.disjoined m' L" using data.disjoined_update [OF l_def 0 9 2 10 4 5 11 12 13] by blast
+  ultimately have "storage_data.disjoint m' L" using data.disjoint_update [OF l_def 0 9 2 10 4 5 11 12 13] by blast
   then show ?thesis
-    by (simp add: "13" adisjoined_def data.range_def arange_def)
+    by (simp add: "13" adisjoint_def data.range_def arange_def)
 qed
 
-lemma disjoined_mupdate_2:
+lemma disjoint_mupdate_2:
   assumes "mupdate is (l1, v, m) = Some m'"
       and "arange m l2 = Some (the (arange m l2))"
       and "the (mlookup m is l1) |\<notin>| the (arange m l2)"
-      and "adisjoined m (the (arange m l2))"
-    shows "adisjoined m' (the (arange m' l2))"
+      and "adisjoint m (the (arange m l2))"
+    shows "adisjoint m' (the (arange m' l2))"
 proof -
   from assms(1) obtain l
     where l_def: "mlookup m is l1 = Some l"
@@ -1122,7 +1122,7 @@ proof -
   ultimately have *: "arange m' l2 = Some L" using assms(3) a_data.range_same[of m l2 L] by blast
   then have "\<forall>l|\<in>|the (arange m l2). m $ l = m' $ l" using L_def
     by (simp add: \<open>\<forall>l'|\<in>|L. m' $ l' = m $ l'\<close>)
-  then have "adisjoined m' (the (arange m l2))" using a_data.disjoined_disjoined[OF assms(4,2)] by blast
+  then have "adisjoint m' (the (arange m l2))" using a_data.disjoint_disjoint[OF assms(4,2)] by blast
   then show ?thesis using * L_def by auto 
 qed
 
@@ -1163,10 +1163,10 @@ method mc uses lookup
   | (erule read_mupdate_value)
   | (erule read_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule read_mupdate_2)
-  | (erule disjoined_range_write_1)
-  | (erule disjoined_range_write_2)
-  | (erule disjoined_mupdate_value)
-  | (erule disjoined_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
+  | (erule disjoint_range_write_1)
+  | (erule disjoint_range_write_2)
+  | (erule disjoint_mupdate_value)
+  | (erule disjoint_mupdate_1, solves\<open>simp\<close>, solves\<open>simp\<close>)
   | (erule nth_some, solves\<open>simp\<close>)
   | (erule mlookup_mupdate, solves\<open>simp\<close>)
   | (erule mlookup_some_write_1, (slookup lookup: lookup)?)
@@ -1190,6 +1190,6 @@ method mc uses lookup
   | (erule mlookup_locations_write_4)
   | (erule mlookup_locations_mupdate_1, assumption, assumption, solves\<open>simp\<close>)
   | (erule mlookup_locations_mupdate_2, assumption, assumption, solves\<open>simp\<close>)
-  | (erule disjoined_mupdate_2)
+  | (erule disjoint_mupdate_2)
 
 end

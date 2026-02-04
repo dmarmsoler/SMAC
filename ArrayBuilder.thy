@@ -384,7 +384,7 @@ section \<open>While Invariant\<close>
 definition(in Contract) while_inv where
   "while_inv own state \<equiv>
     pred_some (\<lambda>xs. \<exists>ar. xs = adata.Array ar \<and> filter_items_prefix (unat (valtype.uint (kdata.vt (state.Stack state $$! i)))) (state.Storage state this items) (valtype.ad (kdata.vt (state.Stack state $$! owner))) (map (unat \<circ> valtype.uint \<circ> adata.vt) (take (unat (valtype.uint (kdata.vt (state.Stack state $$! counter)))) ar))) (aread (State.Memory state) (kdata.memloc (state.Stack state $$! result)))
-    \<and> adisjoined (state.Memory state) (the (arange (state.Memory state) (kdata.memloc (state.Stack state $$! result))))
+    \<and> adisjoint (state.Memory state) (the (arange (state.Memory state) (kdata.memloc (state.Stack state $$! result))))
     \<and> state.Stack state $$ owner = Some (kdata.Value own)
     \<and> length (allItems (storage_data.ar (state.Storage state this items)) (valtype.ad own)) = unat (valtype.uint (storage_data.vt (storage_data.mp (state.Storage state this itemCount) own)))
     \<and> pred_some (\<lambda>xs. length (adata.ar xs) = length (allItems (storage_data.ar (state.Storage state this items)) (valtype.ad own))) (aread (State.Memory state) (kdata.memloc (state.Stack state $$! result)))
@@ -408,7 +408,7 @@ definition(in Contract) while_inv where
 lemma(in Contract) while_init:
   assumes "unat (valtype.uint (kdata.vt (state.Stack state $$! i))) = 0"
       and "unat (valtype.uint (kdata.vt (state.Stack state $$! counter))) = 0"
-      and "adisjoined (state.Memory state) (the (arange (state.Memory state) (kdata.memloc (state.Stack state $$! result))))"
+      and "adisjoint (state.Memory state) (the (arange (state.Memory state) (kdata.memloc (state.Stack state $$! result))))"
       and "state.Stack state $$ owner = Some (kdata.Value own)"
       and "length (allItems (storage_data.ar (state.Storage state this items)) (valtype.ad own)) = unat (valtype.uint (storage_data.vt (storage_data.mp (state.Storage state this itemCount) own)))"
       and "length (storage_data.ar (state.Storage state this items)) < 2^256"

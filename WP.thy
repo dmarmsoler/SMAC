@@ -682,7 +682,7 @@ lemma (in Contract) wp_assign_storage_monad[wprules]:
 
 lemma (in Contract) wp_stackLookup[wprules]:
   assumes "wp (lfold es)
-     (\<lambda>a. wp (stack_disjoined x (\<lambda>k. return (rvalue.Value k))
+     (\<lambda>a. wp (stack_disjoint x (\<lambda>k. return (rvalue.Value k))
                 (\<lambda>p. option Err (\<lambda>s. mlookup (state.Memory s) a p) \<bind>
                       (\<lambda>l. option Err (\<lambda>s. state.Memory s $ l) \<bind>
                             (\<lambda>md. if mdata.is_Value md then return (rvalue.Value (mdata.vt md))
@@ -742,8 +742,8 @@ lemma wp_stackCheck[wprules]:
       and "Stack s $$ i = None \<Longrightarrow> E Err s"
       and "Stack s $$ i = Some (kdata.Storage None) \<Longrightarrow> wp sp P E s"
       and "Stack s $$ i = Some (kdata.Calldata None) \<Longrightarrow> wp cp P E s"
-    shows "wp (stack_disjoined i kf mf cf cp sf sp) P E s"
-  unfolding wp_def stack_disjoined_def
+    shows "wp (stack_disjoint i kf mf cf cp sf sp) P E s"
+  unfolding wp_def stack_disjoint_def
   apply (simp add:execute_simps applyf_def get_def return_def bind_def)
   apply (cases "Stack s $$ i")
   apply (auto simp add:execute_simps)
@@ -774,7 +774,7 @@ lemma (in Contract) post_wp:
 lemma (in Contract) wp_storeArrayLength[wprules]:
   assumes "wp (lfold xs)
      (\<lambda>a. wp (option Err (\<lambda>s. slookup a (state.Storage s this v)) \<bind>
-              (\<lambda>sd. storage_disjoined sd (K (throw Err)) (\<lambda>sa. return (rvalue.Value (Uint (word_of_nat (length (storage_data.ar sd)))))) (K (throw Err))))
+              (\<lambda>sd. storage_disjoint sd (K (throw Err)) (\<lambda>sa. return (rvalue.Value (Uint (word_of_nat (length (storage_data.ar sd)))))) (K (throw Err))))
            P E)
      E s"
   shows "wp (storeArrayLength v xs) P E s"
@@ -782,7 +782,7 @@ lemma (in Contract) wp_storeArrayLength[wprules]:
 
 lemma (in Contract) wp_arrayLength[wprules]:
   assumes "wp (lfold xs)
-     (\<lambda>a. wp (stack_disjoined v (K (throw Err))
+     (\<lambda>a. wp (stack_disjoint v (K (throw Err))
                 (\<lambda>p. option Err (\<lambda>s. mlookup (state.Memory s) a p) \<bind>
                       (\<lambda>l. option Err (\<lambda>s. state.Memory s $ l) \<bind>
                             (\<lambda>md. if mdata.is_Array md
@@ -804,17 +804,17 @@ lemma (in Contract) wp_arrayLength[wprules]:
 
 lemma (in Contract) wp_storearrayLength[wprules]:
   assumes "slookup [] (state.Storage s this STR ''proposals'') = None \<Longrightarrow> E Err s"
- and "wp (storage_disjoined (state.Storage s this STR ''proposals'') (K (throw Err))
+ and "wp (storage_disjoint (state.Storage s this STR ''proposals'') (K (throw Err))
          (\<lambda>sa. return (rvalue.Value (Uint (word_of_nat (length (storage_data.ar (state.Storage s this STR ''proposals''))))))) (K (throw Err)))
      P E s"
   shows "wp (storeArrayLength STR ''proposals'' []) P E s"
   unfolding storeArrayLength_def apply vcg using assms apply simp apply vcg done
 
-lemma (in Contract) wp_storage_disjoined[wprules]:
+lemma (in Contract) wp_storage_disjoint[wprules]:
   assumes "\<And>v. sd = storage_data.Value v \<Longrightarrow> wp (vf v) P E s"
      and "\<And>a. sd = storage_data.Array a \<Longrightarrow> wp (af a) P E s"
      and "\<And>m. sd = storage_data.Map m \<Longrightarrow> wp (mf m) P E s"
-  shows "wp (storage_disjoined sd vf af mf) P E s"
+  shows "wp (storage_disjoint sd vf af mf) P E s"
   using assms apply (cases sd) by (simp add:wpsimps)+
 
 lemma (in Contract) wp_allocate[wprules]:
@@ -861,9 +861,9 @@ lemma (in Contract) wp_assign_stack_kdvalue[wprules]:
           wp (modify (stack_update i (kdata.Value v)) \<bind> (\<lambda>a. return Empty)) P E s"
       and "\<And>a. Stack s $$ i = Some (kdata.Calldata (Some a)) \<Longrightarrow> E Err s"
     shows "wp (assign_stack i is (rvalue.Value v)) P E s"
-  apply (vcg | auto simp add:assms stack_disjoined_def)+
+  apply (vcg | auto simp add:assms stack_disjoint_def)+
   using assms apply blast
-  by (vcg | auto simp add:assms stack_disjoined_def)+
+  by (vcg | auto simp add:assms stack_disjoint_def)+
 declare(in Contract) wp_stackCheck[wprules]
 
 declare write.simps [simp del]

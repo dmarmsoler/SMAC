@@ -2217,25 +2217,25 @@ qed
 
 section \<open>Separation Check\<close>
 
-definition disjoined:: "'v memory \<Rightarrow> location fset \<Rightarrow> bool" where
-  "disjoined m L \<equiv>
+definition disjoint:: "'v memory \<Rightarrow> location fset \<Rightarrow> bool" where
+  "disjoint m L \<equiv>
     \<forall>x |\<in>| L. \<forall>xs. m$x = Some (mdata.Array xs)
     \<longrightarrow> (\<forall>i j i' j' L L'.
           i \<noteq> j \<and> xs $ i = Some i' \<and> xs$j = Some j' \<and> range m i' = Some L \<and> range m j' = Some L'
       \<longrightarrow> L |\<inter>| L' = {||})"
 
-lemma disjoined_subs[intro]:
+lemma disjoint_subs[intro]:
   assumes "L' |\<subseteq>| L"
-      and "disjoined m L"
-    shows "disjoined m L'"
-  using assms unfolding disjoined_def by blast
+      and "disjoint m L"
+    shows "disjoint m L'"
+  using assms unfolding disjoint_def by blast
 
-lemma disjoined_disjoined:
-  assumes "disjoined m L"
+lemma disjoint_disjoint:
+  assumes "disjoint m L"
       and "range m l = Some L"
       and "\<forall>l |\<in>| L. m $ l = m' $ l"
-    shows "disjoined m' L"
-  unfolding disjoined_def
+    shows "disjoint m' L"
+  unfolding disjoint_def
 proof (rule,rule,rule,rule,rule,rule,rule,rule,rule,rule)
   fix x xs i j i' j' La L'
   assume *: "x |\<in>| L"
@@ -2256,16 +2256,16 @@ proof (rule,rule,rule,rule,rule,rule,rule,rule,rule,rule)
     by (metis assms(3) range_def range_same option.inject)
   with *** have "range m j' = Some L'" using range_same[of m' j' L' m]
     using assms(3) by auto
-  ultimately show "La |\<inter>| L' = {||}" using assms(1) unfolding disjoined_def by blast
+  ultimately show "La |\<inter>| L' = {||}" using assms(1) unfolding disjoint_def by blast
 qed
 
-lemma disjoined_prefix:
+lemma disjoint_prefix:
   assumes "fset L \<subseteq> loc m"
       and "prefix m m'"
-      and "disjoined m L"
+      and "disjoint m L"
       and "range_safe s m' l = Some L"
-    shows "disjoined m' L"
-  unfolding disjoined_def
+    shows "disjoint m' L"
+  unfolding disjoint_def
 proof (rule,rule,rule,rule,rule,rule,rule,rule,rule,rule)
   fix x xs i j i' j' La L'
   assume *: "x |\<in>| L"
@@ -2286,7 +2286,7 @@ proof (rule,rule,rule,rule,rule,rule,rule,rule,rule,rule)
     unfolding prefix_def loc_def nth_safe_def by (auto simp add: nth_append_left)
   then have "range m j' = Some L'" using range_same[of m' j' L' m] using calculation(3) by auto
   moreover have "range m j' = Some L'" using range_same[of m' j' L' m] using calculation(6) by auto
-  ultimately show "La |\<inter>| L' = {||}" using assms(3) unfolding disjoined_def by (meson  \<open>x |\<in>| L\<close>)
+  ultimately show "La |\<inter>| L' = {||}" using assms(3) unfolding disjoint_def by (meson  \<open>x |\<in>| L\<close>)
 qed
 
 lemma update_some:
@@ -2303,7 +2303,7 @@ lemma update_some:
       locations m0 is1 l1 = Some L3 \<and>
       L3 |\<inter>| L2 = {||} \<and>
       l1' |\<notin>| L2 \<and>
-      disjoined m0 L1
+      disjoint m0 L1
     \<longrightarrow> (\<exists>x. read_safe s m1 l1 = Some x)" (is "?P s m1 l1")
 proof (induction rule: read_safe.induct[where ?P = ?P])
   case IH: (1 s m1 l1)
@@ -2323,7 +2323,7 @@ proof (induction rule: read_safe.induct[where ?P = ?P])
        and 12: "locations m0 is1 l1 = Some L3"
        and 13: "L3 |\<inter>| L2 = {||}"
        and 14: "l1' |\<notin>| L2"
-       and 15: "disjoined m0 L1"
+       and 15: "disjoint m0 L1"
     from 9 have "l1 |\<notin>| s" by auto
     show "\<exists>x. read_safe s m1 l1 = Some x"
     proof (cases "m1$l1")
@@ -2424,7 +2424,7 @@ proof (induction rule: read_safe.induct[where ?P = ?P])
               moreover from 7 have "\<forall>l|\<in>|L1'' |-| L1'. m1 $ l = m0 $ l"
                 using `L1'' |\<subseteq>| L1` by blast
               moreover from 13 have "L3' |\<inter>| L2 = {||}" using `L3 = finsert l1 L3'` by auto
-              moreover from 15 have "disjoined m0 L1''" using `L1'' |\<subseteq>| L1` by blast
+              moreover from 15 have "disjoint m0 L1''" using `L1'' |\<subseteq>| L1` by blast
               moreover have "l1 |\<notin>| L1''"
                 by (metis calculation(2) finsert_not_fempty finter_finsert_left range_safe_disj)
               ultimately show ?thesis using IH[OF _ _ `l \<in> set ls`] Some Array 3 6 8 10 14 by auto
@@ -2473,7 +2473,7 @@ proof (induction rule: read_safe.induct[where ?P = ?P])
               then have "range m0 l' = Some L'" unfolding range_def
                 using range_safe_subset_same by blast
               ultimately have "(L |\<inter>| L' = {||})"
-                using 15 Some Array `m1$l1 = m0$l1` l_def `l1 |\<in>| L1` unfolding disjoined_def by metis
+                using 15 Some Array `m1$l1 = m0$l1` l_def `l1 |\<in>| L1` unfolding disjoint_def by metis
               moreover from 1 have "mlookup m0 is1' l' = Some l1'"
                 using Some Array `is1=iv#is1'` `m1$l1 = m0$l1` \<open>ls $ i' = Some l'\<close>
                   \<open>vtype_class.to_nat iv = Some i'\<close> mlookup_obtain_nempty2 by fastforce
@@ -2546,7 +2546,7 @@ lemma update_some_obtains_read:
   and "locations m0 is1 l1 = Some L3"
   and "L3 |\<inter>| L2 = {||}"
   and "l1' |\<notin>| L2"
-  and "disjoined m0 L1"
+  and "disjoint m0 L1"
 obtains x where "read_safe s0 m1 l1 = Some x"
   using update_some[of m0 l1 l1' m1 l2 s0 L1' s1 L2 cd2] assms
   unfolding range_def read_def 
@@ -2564,7 +2564,7 @@ lemma update_some_obtains_range:
   and "locations m0 is1 l1 = Some L3"
   and "L3 |\<inter>| L2 = {||}"
   and "l1' |\<notin>| L2"
-  and "disjoined m0 L1"
+  and "disjoint m0 L1"
 obtains L where "range_safe s0 m1 l1 = Some L"
 proof -
   from assms(3) obtain cd1 where "read_safe s0 m0 l1 = Some cd1"
@@ -2577,8 +2577,8 @@ proof -
   then show ?thesis using range_read_some that by blast
 qed
 
-lemma disjoined_range_disj:
-  assumes "disjoined m0 L"
+lemma disjoint_range_disj:
+  assumes "disjoint m0 L"
       and "x |\<in>| L"
       and "m0 $ x = Some (mdata.Array xs)"
       and "m0 $ x = m1 $ x"
@@ -2593,7 +2593,7 @@ proof (rule allI, rule impI)
   assume "m1 $ x = Some (mdata.Array xs)"
   with assms(1,2,4) have "(\<forall>i j i' j' L L'.
           i \<noteq> j \<and> xs $ i = Some i' \<and> xs$j = Some j' \<and> range m0 i' = Some L \<and> range m0 j' = Some L'
-      \<longrightarrow> L |\<inter>| L' = {||})" unfolding disjoined_def by auto
+      \<longrightarrow> L |\<inter>| L' = {||})" unfolding disjoint_def by auto
   then show "\<forall>i j i' j' L L'. i \<noteq> j \<and> xs $ i = Some i' \<and> xs $ j = Some j' \<and> range m1 i' = Some L \<and> range m1 j' = Some L' \<longrightarrow> L |\<inter>| L' = {||}"
     using assms(3,5)
     by (metis \<open>m1 $ x = Some (mdata.Array xs)\<close> assms(4) mdata.inject(2) nth_in_set option.inject)
@@ -2607,7 +2607,7 @@ lemma update_some_range_subset:
       and "range_safe s m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "disjoined m0 L1"
+      and "disjoint m0 L1"
       and "range_safe s m1 l1 = Some L"
     shows "L |\<subseteq>| L1 |\<union>| L2'"
   using assms
@@ -2692,8 +2692,8 @@ next
           by (meson Cons.prems(3) \<open>x \<in> set ls\<close> range_safe_obtains_subset fsubset_finsertI range_safe_subset_same ls_def)
         moreover have "\<forall>l|\<in>|LL |-| L1'. m1 $ l = m0 $ l"
           using Cons.prems(6) calculation(4) by blast
-        moreover have "disjoined m0 LL"
-          by (meson Cons.prems(8) calculation(4) disjoined_subs)
+        moreover have "disjoint m0 LL"
+          by (meson Cons.prems(8) calculation(4) disjoint_subs)
         ultimately have "LLL |\<subseteq>| LL |\<union>| L2'" using Cons(1)[OF _ Cons(3) _ Cons(5) Cons(6) _ Cons(8)] by blast
         then show "fset LLL \<subseteq> fset (L1 |\<union>| L2')"
           using \<open>LL |\<subseteq>| L1\<close> by blast
@@ -2709,7 +2709,7 @@ next
         by (meson \<open>ls $ i'' = Some (ls ! i'')\<close> range_safe_obtains_subset ls_def nth_in_set)
       then have LLL_def: "range m0 (ls ! i'') = Some LLL"
           by (metis bot.extremum data.range_def data.range_safe_subset_same)
-      moreover have "LL |\<inter>| LLL = {||}" using Cons(9) unfolding disjoined_def using False i''_def x_def \<open>l1 |\<in>| L1\<close> ls_def \<open>ls $i'' = Some (ls ! i'')\<close>  \<open>ls $ i' = Some x\<close>
+      moreover have "LL |\<inter>| LLL = {||}" using Cons(9) unfolding disjoint_def using False i''_def x_def \<open>l1 |\<in>| L1\<close> ls_def \<open>ls $i'' = Some (ls ! i'')\<close>  \<open>ls $ i' = Some x\<close>
       LL_def LLL_def using calculation(1) by blast
       moreover have "L1' |\<subseteq>| LLL"
       proof -
@@ -2731,7 +2731,7 @@ next
     by blast
 qed
 
-lemma disjoined_update:
+lemma disjoint_update:
   assumes "mlookup m0 is1 l1 = Some l1'"
       and "m1 $ l1' = m0 $ l2'"
       and "range_safe s m0 l1 = Some L1"
@@ -2739,11 +2739,11 @@ lemma disjoined_update:
       and "range_safe s m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "disjoined m0 L1"
-      and "disjoined m0 L2'"
+      and "disjoint m0 L1"
+      and "disjoint m0 L2'"
       and "range_safe s m1 l1 = Some L"
       and "L1 |-| L1' |\<inter>| L2' = {||}"
-    shows "disjoined m1 L"
+    shows "disjoint m1 L"
   using assms
 proof (induction is1 arbitrary: L l1 L1)
   case Nil
@@ -2760,10 +2760,10 @@ proof (induction is1 arbitrary: L l1 L1)
       case (Value x1)
       with Nil(10) Some have "L = {|l1|}" by (simp add:case_memory_def split:if_split_asm)
       then show ?thesis
-        by (simp add: Some Value disjoined_def)
+        by (simp add: Some Value disjoint_def)
     next
       case (Array xs)
-      show ?thesis unfolding disjoined_def
+      show ?thesis unfolding disjoint_def
       proof (rule ballI)
         fix x
         assume "x |\<in>| L"
@@ -2801,7 +2801,7 @@ proof (induction is1 arbitrary: L l1 L1)
               moreover from \<open>L0 |\<subseteq>| L2'\<close> have "\<forall>l |\<in>| L0. m1 $ l = m0 $ l" using Nil(7) by blast
               ultimately show ?thesis using * range_same by metis
             qed
-            ultimately show "L |\<inter>| L' = {||}" using Some Array  Nil(9) unfolding disjoined_def
+            ultimately show "L |\<inter>| L' = {||}" using Some Array  Nil(9) unfolding disjoint_def
               by (metis "1" \<open>l1 = l1'\<close> assms(2,5) range_safe_subs)
           qed
         next
@@ -2814,7 +2814,7 @@ proof (induction is1 arbitrary: L l1 L1)
           with Nil(9) 2 LL_def \<open>LL |\<subseteq>| L2'\<close> Some Array
           have *: "\<forall>x|\<in>|L2'. \<forall>xs. m0 $ x = Some (mdata.Array xs) \<longrightarrow> (\<forall>i j i' j' L L'.
           i \<noteq> j \<and> xs $ i = Some i' \<and> xs$j = Some j' \<and> range m0 i' = Some L \<and> range m0 j' = Some L'
-      \<longrightarrow> L |\<inter>| L' = {||})" unfolding disjoined_def
+      \<longrightarrow> L |\<inter>| L' = {||})" unfolding disjoint_def
             by (metis)
           show ?thesis
           proof (rule allI, rule impI, (rule allI)+, rule impI)
@@ -2867,7 +2867,7 @@ next
     by (metis ls_def mdata.inject(2) nth_safe_length option.inject)
   then have "ls $i'' = Some (ls ! i'')" by simp
 
-  show ?case unfolding disjoined_def
+  show ?case unfolding disjoint_def
   proof
     fix x
     assume "x |\<in>| L"
@@ -2936,7 +2936,7 @@ next
           moreover obtain LL' where "range_safe s m1 i0' = Some LL'" and "LL' |\<subseteq>| L"
             using range_safe_obtains_subset[OF Cons(11) m1_ls] \<open>ls = xs\<close> *
             by (metis fsubset_finsertI range_safe_subset_same nth_in_set)
-          moreover have "disjoined m0 Li'"
+          moreover have "disjoint m0 Li'"
             using Cons.prems(8) \<open>Li' |\<subseteq>| L1\<close> by auto
           ultimately consider "x |\<in>|Li'" | "x |\<in>| L2'"
             using update_some_range_subset[OF _ Cons(3) _ Cons(5,6) _ Cons(8), of is1' "i0'" Li' LL']
@@ -2955,7 +2955,7 @@ next
                 moreover have "range m0 i0' = Some Li'"
                   by (metis Li'_def fempty_fsubsetI range_def range_safe_subset_same)
                 ultimately have "LL |\<inter>| Li' = {||}"
-                  using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoined_def by blast
+                  using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoint_def by blast
                 moreover have "L1' |\<subseteq>| Li'" using mlookup_range_safe_subs[OF _ Cons(5)]
                   using \<open>range_safe s m0 i0' = Some Li'\<close> \<open>mlookup m0 is1' i0' = Some l1'\<close> by blast
                 ultimately have "LL |\<inter>| L1' = {||}" by auto
@@ -2968,7 +2968,7 @@ next
               moreover have "range m0 i0' = Some Li'"                                                     
                 by (metis Li'_def fempty_fsubsetI range_def range_safe_subset_same)
               ultimately show "L' |\<inter>| Li' = {||}"
-                using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoined_def by blast
+                using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoint_def by blast
             qed
             ultimately show ?thesis by blast
           next
@@ -2984,7 +2984,7 @@ next
                 moreover have "range m0 i0' = Some Li'"
                   by (metis Li'_def fempty_fsubsetI range_def range_safe_subset_same)
                 ultimately have "LL |\<inter>| Li' = {||}"
-                  using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoined_def by blast
+                  using \<open>l1 |\<in>| L1\<close> * LL_def Cons(9) unfolding disjoint_def by blast
                 moreover have "L1' |\<subseteq>| Li'" using mlookup_range_safe_subs[OF _ Cons(5)]
                   using \<open>range_safe s m0 i0' = Some Li'\<close> \<open>mlookup m0 is1' i0' = Some l1'\<close> by blast
                 ultimately have "LL |\<inter>| L1' = {||}" by auto
@@ -3036,7 +3036,7 @@ next
             then have "range m0 j' = Some Li''"
               unfolding range_def using data.range_safe_subset_same by blast
             moreover have "Li' |\<inter>| Li'' = {||}"
-              using "*" Cons.prems(8) \<open>l1 |\<in>| L1\<close> \<open>ls = xs\<close> calculation(1,2) disjoined_def ls_def by blast
+              using "*" Cons.prems(8) \<open>l1 |\<in>| L1\<close> \<open>ls = xs\<close> calculation(1,2) disjoint_def ls_def by blast
             moreover have "range m1 i0' = range m0 i0'" and "range m1 j' = range m0 j'"
             proof -
               have *:"mlookup m0 is1' (ls ! i'') = Some l1'"
@@ -3050,7 +3050,7 @@ next
               proof -
                 from LL_def have "range m0 (ls ! i'') = Some LL"
                   by (metis fempty_fsubsetI range_def range_safe_subset_same)
-                then show ?thesis using Cons(9) \<open>range m0 i0' = Some Li'\<close> unfolding disjoined_def
+                then show ?thesis using Cons(9) \<open>range m0 i0' = Some Li'\<close> unfolding disjoint_def
                   using "1"(2) \<open>ls $ i'' = Some (ls ! i'')\<close> \<open>ls = xs\<close> \<open>xs $ i0 = Some i0'\<close> ls_def \<open>l1 |\<in>| L1\<close> by blast
               qed
               ultimately have "Li' |\<inter>| L1' = {||}" by auto
@@ -3062,7 +3062,7 @@ next
                 by (metis fempty_fsubsetI range_def range_safe_subset_same)   
               then have "LL |\<inter>| Li'' = {||}"
                 using "1"(3) \<open>ls $ i'' = Some (ls ! i'')\<close> \<open>ls = xs\<close> \<open>xs $ j = Some j'\<close> ls_def \<open>l1 |\<in>| L1\<close>  Cons(9) \<open>range m0 j' = Some Li''\<close>
-                unfolding disjoined_def by blast
+                unfolding disjoint_def by blast
               then have "Li'' |\<inter>| L1' = {||}" using \<open>L1' |\<subseteq>| LL\<close> by auto
               then have "\<forall>l |\<in>| Li''. m1 $ l = m0 $ l"
                 using Cons(7) \<open>range m0 j' = Some Li''\<close> \<open>Li'' |\<subseteq>| L1\<close> by blast
@@ -3095,7 +3095,7 @@ next
           then have "range_safe s m0 (ls ! i'') = Some LL"
             by (meson fsubset_finsertI range_safe_subset_same)
           moreover have "\<forall>l|\<in>|LL |-| L1'. m1 $ l = m0 $ l" using \<open>LL |\<subseteq>| L1\<close> Cons(7) by auto
-          moreover have "disjoined m0 LL"  using \<open>LL |\<subseteq>| L1\<close> Cons(9) by auto
+          moreover have "disjoint m0 LL"  using \<open>LL |\<subseteq>| L1\<close> Cons(9) by auto
           moreover obtain LL'
             where "range_safe s m1 (ls ! i'') = Some LL'"
               and "LL' |\<subseteq>| L"
@@ -3103,10 +3103,10 @@ next
             by (metis \<open>ls $ i'' = Some (ls ! i'')\<close> fsubset_finsertI range_safe_subset_same nth_in_set)
           moreover have "LL |-| L1' |\<inter>| L2' = {||}" using Cons(12)
             using \<open>LL |\<subseteq>| L1\<close> by blast
-          ultimately have "disjoined m1 LL'" using Cons(1)[of "ls ! i''", OF _ Cons(3) _ Cons(5,6) _ Cons(8) _ Cons(10)]
+          ultimately have "disjoint m1 LL'" using Cons(1)[of "ls ! i''", OF _ Cons(3) _ Cons(5,6) _ Cons(8) _ Cons(10)]
             by simp
           then show ?thesis
-            using \<open>LL' |\<subseteq>| L\<close> "2"(2,3) True \<open>range_safe s m1 (ls ! i'') = Some LL'\<close> disjoined_def range_range xs_def by blast
+            using \<open>LL' |\<subseteq>| L\<close> "2"(2,3) True \<open>range_safe s m1 (ls ! i'') = Some LL'\<close> disjoint_def range_range xs_def by blast
         next
           case False
           moreover obtain Li'
@@ -3123,7 +3123,7 @@ next
           moreover have "ls $i' = Some (ls ! i')" by (simp add: "2"(1))
           ultimately have "Li' |\<inter>| Li'' = {||}"
             using Cons(9) Li''_def \<open>l1 |\<in>| L1\<close> ls_def \<open>ls $i'' = Some (ls ! i'')\<close>
-            unfolding disjoined_def by blast
+            unfolding disjoint_def by blast
           moreover have "L1' |\<subseteq>| Li''"
           proof -
             have "mlookup m0 is1' (ls ! i'') = Some l1'"
@@ -3166,7 +3166,7 @@ next
                     \<and> range m1 i' = Some L
                     \<and> range m1 j' = Some L'
                     \<longrightarrow> L |\<inter>| L' = {||})"
-            using disjoined_range_disj[OF Cons(9), of x xs m1] by simp
+            using disjoint_range_disj[OF Cons(9), of x xs m1] by simp
           then show ?thesis using \<open>m1 $ x = Some (mdata.Array xs)\<close> by blast
         qed
       qed
@@ -3189,7 +3189,7 @@ global_interpretation a_data: data adata.Value adata.Array
       and aread = a_data.read
       and arange_safe = a_data.range_safe
       and arange = a_data.range
-      and adisjoined = a_data.disjoined
+      and adisjoint = a_data.disjoint
   .
 
 section \<open>Array Lookup\<close>
@@ -3689,7 +3689,7 @@ lemma read_safe_lookup_update_value:
       and "arange_safe s m0 l1' = Some L1'"
       and "\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l"
       and "aread_safe s m0 l1 = Some cd0"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "aread_safe s m1 l1 = Some cd1"
     shows "aupdate is1 (Value v) cd0 = Some cd1"
   using assms
@@ -3785,7 +3785,7 @@ next
       next
         from Cons(7) show "\<forall>l|\<in>|LL |-| L1'. m1 $ l = m0 $ l" using \<open>LL |\<subseteq>| L1\<close> by blast
       next
-        from Cons(9) show "adisjoined m0 LL" using \<open>LL |\<subseteq>| L1\<close> by auto
+        from Cons(9) show "adisjoint m0 LL" using \<open>LL |\<subseteq>| L1\<close> by auto
       qed
       then have "(as ! i') = cd2'"
         using as_def cd1'_def ls_def True Cons(8)
@@ -3860,7 +3860,7 @@ next
         moreover have "l1 |\<in>| L1"
           using Cons.prems(4) a_data.range_safe_subs by auto
         ultimately have "(L |\<inter>| L' = {||})"
-          using Cons(9) unfolding a_data.disjoined_def
+          using Cons(9) unfolding a_data.disjoint_def
           using ls_def `i'' \<noteq> i'` by blast
         moreover have "mlookup m0 is1' (ls ! i'') = Some l1'"
           using Cons(2) ls_def \<open>to_nat i = Some i''\<close>
@@ -3888,7 +3888,7 @@ lemma read_safe_lookup_update:
       and "(\<forall>l |\<in>| L2. m1 $ l = m0 $ l)"
       and "aread_safe s m0 l1 = Some cd1"
       and "aread_safe s2 m0 l2 = Some cd2"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "aread_safe s m1 l1 = Some cd"
     shows "alookup is2 cd2 \<bind> (\<lambda>cd. aupdate is1 cd cd1) = Some cd"
   using assms
@@ -4012,7 +4012,7 @@ next
       next
         from Cons(8) show "\<forall>l|\<in>|LL |-| L1'. m1 $ l = m0 $ l" using \<open>LL |\<subseteq>| L1\<close> by blast
       next
-        from Cons(12) show "adisjoined m0 LL" using \<open>LL |\<subseteq>| L1\<close> by auto
+        from Cons(12) show "adisjoint m0 LL" using \<open>LL |\<subseteq>| L1\<close> by auto
       qed
       then have "(as ! i') = cd2'"
         using as_def cd1'_def ls_def True Cons(10)
@@ -4092,7 +4092,7 @@ next
         moreover have "l1 |\<in>| L1"
           using Cons.prems(4) a_data.range_safe_subs by auto
         ultimately have "(L |\<inter>| L' = {||})"
-          using Cons(12) unfolding a_data.disjoined_def
+          using Cons(12) unfolding a_data.disjoint_def
           using ls_def `i'' \<noteq> i'` by blast
         moreover have "mlookup m0 is1' (ls ! i'') = Some l1'"
           using Cons(2) ls_def \<open>to_nat i = Some i''\<close>
@@ -4118,7 +4118,7 @@ lemma range_safe_update_some:
       and "arange_safe s2 m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "s |\<inter>| L2' = {||}"
       and "the (locations m0 is1 l1) |\<inter>| L2' = {||}"
       and "l1' |\<notin>| L2'"
@@ -4226,7 +4226,7 @@ next
             using Cons.prems(1,3,4) a_data.noloops by blast
           with Cons(5) have "arange_safe (finsert l1 s) m0 l1' = Some L1'" using a_data.range_safe_nin_same[of s m0 l1' L1' "finsert l1 s"] by blast
           moreover from Cons(7) have "\<forall>l|\<in>|L' |-| L1'. m1 $ l = m0 $ l" using \<open>L' |\<subseteq>| L1\<close> by blast
-          moreover from Cons(9) have "adisjoined m0 L'" using \<open>L' |\<subseteq>| L1\<close> by auto
+          moreover from Cons(9) have "adisjoint m0 L'" using \<open>L' |\<subseteq>| L1\<close> by auto
           moreover from Cons(2,10,11) have "finsert l1 s |\<inter>| L2' = {||}"
           proof -
             from LL_def have "l1 |\<in>| LL" using locations_l_in_L by blast
@@ -4252,7 +4252,7 @@ next
           moreover have "L1' |\<subseteq>| L'" using Cons(5) L'_def a_data.mlookup_range_safe_subs[OF *, of s _ "(finsert l1 s)"] by blast
           moreover from L'_def have "arange m0 l'' = Some L'" unfolding a_data.range_def
             using a_data.range_safe_subset_same by blast
-          ultimately have "L |\<inter>| L1' = {||}" using Cons(9) unfolding a_data.disjoined_def using m1_ls x_def l''_def by blast
+          ultimately have "L |\<inter>| L1' = {||}" using Cons(9) unfolding a_data.disjoint_def using m1_ls x_def l''_def by blast
           then show ?thesis using \<open>L |\<subseteq>| L1\<close> Cons(7) a_data.range_safe_same[of "finsert l1 s" m0 x L m1]
             L_def by blast
         qed
@@ -4274,7 +4274,7 @@ lemma range_update_some:
       and "arange m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "the (locations m0 is1 l1) |\<inter>| L2' = {||}"
       and "l1' |\<notin>| L2'"
     shows "\<exists>L. arange m1 l1 = Some L"
@@ -4289,7 +4289,7 @@ lemma range_safe_update_subs:
       and "arange_safe s2 m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "arange_safe s m1 l1 = Some L"
     shows "L |\<subseteq>| L1 |\<union>| L2'"
   using assms
@@ -4417,7 +4417,7 @@ next
             next
               from Cons(7) show "\<forall>l|\<in>|LL |-| L1'. m1 $ l = m0 $ l" using \<open>LL |\<subseteq>| L1\<close> by auto
             next
-              from Cons(9) show "adisjoined m0 LL"
+              from Cons(9) show "adisjoint m0 LL"
                 using calculation(2) by auto
             next
               from L_def show "arange_safe (finsert l1 s) m1 l'' = Some L" using \<open>x = l''\<close> by simp
@@ -4446,7 +4446,7 @@ next
               then have "L1' |\<subseteq>| LL" using Cons(5) a_data.mlookup_range_safe_subs[OF *, of s _ "(finsert l1 s)"] by blast
               moreover from LL_def have "arange m0 l'' = Some LL"
                 by (metis all_not_fin_conv data.range_safe_nin_same fempty_fminus arange_safe_def a_data.range_def)
-              ultimately have "L' |\<inter>| L1' = {||}" using Cons(9) unfolding a_data.disjoined_def
+              ultimately have "L' |\<inter>| L1' = {||}" using Cons(9) unfolding a_data.disjoint_def
                 using m1_ls \<open>L' |\<subseteq>| L1\<close> False \<open>xs $ i' = Some x\<close> \<open>xs $ j' = Some l''\<close> by blast
               then have "\<forall>l|\<in>|L'. m1 $ l = m0 $ l" using Cons(7) `L' |\<subseteq>| L1` by auto
               then show ?thesis using a_data.range_safe_same[OF L'_def] using L_def by simp
@@ -4469,7 +4469,7 @@ lemma range_update_subs:
       and "arange m0 l2' = Some L2'"
       and "(\<forall>l |\<in>| L1 |-| L1'. m1 $ l = m0 $ l)"
       and "(\<forall>l |\<in>| L2'. m1 $ l = m0 $ l)"
-      and "adisjoined m0 L1"
+      and "adisjoint m0 L1"
       and "arange m1 l1 = Some L"
     shows "L |\<subseteq>| L1 |\<union>| L2'"
   using range_safe_update_subs[OF assms(1,2) _ _ _ assms(6,7,8)] unfolding arange_def
@@ -6262,15 +6262,15 @@ corollary write_read:
 
 section \<open>Minit and Separation Check\<close>
 
-lemma write_adisjoined:
+lemma write_adisjoint:
   assumes "write cd m0 = (l, m1)"
       and "arange_safe s m1 l = Some L"
       and "\<forall>l \<ge> length m0. l < length (snd (write cd m0)) \<longrightarrow> \<not> l |\<in>| s"
-    shows "adisjoined m1 L"
+    shows "adisjoint m1 L"
   using assms
 proof (induction arbitrary: L l m0 rule:write.induct)
   case (1 x m)
-  then show ?case unfolding a_data.disjoined_def
+  then show ?case unfolding a_data.disjoint_def
     by (auto simp add:length_append_def case_memory_def split:if_split_asm)
 next
   case (2 ds m)
@@ -6394,7 +6394,7 @@ next
         "arange_safe s (snd (write (ds ! n) (snd (fold_map write (take n ds) m0)))) y = Some L'"
         using prefix_write_range_safe_same[OF _ 22(3) _ *] 22(2) by blast
       ultimately have
-        "adisjoined (snd (write (ds ! n) (snd (fold_map write (take n ds) m0)))) L'"
+        "adisjoint (snd (write (ds ! n) (snd (fold_map write (take n ds) m0)))) L'"
         using 2(1)[of
             "ds ! n"
             "(snd (fold_map write (take n ds) m0))"
@@ -6415,7 +6415,7 @@ next
                 \<and> arange (snd (write (ds ! n) (snd (fold_map write (take n ds) m0)))) j'
                   = Some L'
              \<longrightarrow> L |\<inter>| L' = {||})"
-        by (simp add: a_data.disjoined_def)
+        by (simp add: a_data.disjoint_def)
       show ?thesis
       proof (rule, rule, rule, rule, rule, rule, rule, rule, rule)
         fix xs i j i' j' L' L''
@@ -6439,7 +6439,7 @@ next
       qed
     qed
   qed
-  then show ?case unfolding a_data.disjoined_def
+  then show ?case unfolding a_data.disjoint_def
     by (simp add: a_data.range_def arange_safe_def)
 qed
 

@@ -282,7 +282,7 @@ definition (in Contract) storeArrayLength::"id \<Rightarrow> ('a::address) expre
     do {
       is \<leftarrow> lfold es;
       sd \<leftarrow> option Err (\<lambda>s. slookup is (state.Storage s this i));
-      storage_disjoined sd
+      storage_disjoint sd
         (K (throw Err))
         (\<lambda>sa. return (rvalue.Value (Uint (of_nat (length (storage_data.ar sd))))))
         (K (throw Err))
@@ -290,8 +290,8 @@ definition (in Contract) storeArrayLength::"id \<Rightarrow> ('a::address) expre
 
 section \<open>Stack Lookups\<close>
 
-definition stack_disjoined where
-  "stack_disjoined i kf mf cf cp sf sp =
+definition stack_disjoint where
+  "stack_disjoint i kf mf cf cp sf sp =
     do {
       k \<leftarrow> applyf Stack;
       case k $$ i of
@@ -313,7 +313,7 @@ where
   "stackLookup i es =
     do {
       is \<leftarrow> lfold es;
-      stack_disjoined i
+      stack_disjoint i
         (\<lambda>k. return (Value k))
         (\<lambda>p. do {
           l \<leftarrow> option Err (\<lambda>s. mlookup (state.Memory s) is p);
@@ -340,7 +340,7 @@ definition(in Contract) arrayLength::"id \<Rightarrow> ('a::address) expression_
   "arrayLength i es =
     do {
       is \<leftarrow> lfold es;
-      stack_disjoined i
+      stack_disjoint i
         (K (throw Err))
         (\<lambda>p. do {
           l \<leftarrow> option Err (\<lambda>s. mlookup (state.Memory s) is p);
@@ -444,14 +444,14 @@ definition storage_update_monad where
 
 end
 
-definition option_disjoined where
-  "option_disjoined f m = option Err f \<bind> m"
+definition option_disjoint where
+  "option_disjoint f m = option Err f \<bind> m"
 
 fun (in Contract) assign_stack::
   "id \<Rightarrow> ('a::address) valtype list \<Rightarrow> ('a::address) rvalue \<Rightarrow> ('a::address) expression_monad"
 where
   "assign_stack i is (rvalue.Value v) =
-    stack_disjoined i
+    stack_disjoint i
       (K ((modify (stack_update i (kdata.Value v))) \<bind> K (return Empty)))
       (\<lambda>p. (memory_update_monad (\<lambda>m. mupdate is (p, (mdata.Value v), m))))
       (K (K (throw Err)))
@@ -459,34 +459,34 @@ where
       (\<lambda>p xs. storage_update_monad xs is (K (storage_data.Value v)) p)
       (throw Err)"
 | "assign_stack i is (rvalue.Memory p) =
-    stack_disjoined i
+    stack_disjoint i
       (K (throw Err))
       (\<lambda>p'. case_list is
         (modify (stack_update i (kdata.Memory p))\<bind> K (return Empty))
         (K (K (memory_update_monad (\<lambda>m. (m$p) \<bind> (\<lambda>v. mupdate is (p', v, m)))))))
       (K (K (throw Err)))
       (throw Err)
-      (\<lambda>p' xs. option_disjoined
+      (\<lambda>p' xs. option_disjoint
         (\<lambda>s. read_storage (state.Memory s) p)
         (\<lambda>sd. storage_update_monad xs is (K sd) p'))
       (throw Err)"
 | "assign_stack i is (rvalue.Calldata (Some \<lparr>Location=p, Offset=xs\<rparr>)) =
-    stack_disjoined i
+    stack_disjoint i
       (K (throw Err))
-      (\<lambda>p'. option_disjoined
+      (\<lambda>p'. option_disjoint
         (\<lambda>s. state.Calldata s $$ p \<bind> clookup xs)
         (\<lambda>cd. memory_update_monad (mupdate is \<circ> (read_calldata_memory cd p'))))
       (K (K (throw Err)))
       (modify (stack_update i (kdata.Calldata (Some \<lparr>Location=p, Offset= xs\<rparr>))) \<bind> K (return Empty))
-      (\<lambda>p' xs'. option_disjoined
+      (\<lambda>p' xs'. option_disjoint
         (\<lambda>s. state.Calldata s $$ p \<bind> clookup (xs @ is))
         (\<lambda>cd. storage_update_monad xs' is (K (read_calldata_storage cd)) p'))
       (throw Err)"
 | "assign_stack i is (rvalue.Calldata None) = throw Err"
 | "assign_stack i is (rvalue.Storage (Some \<lparr>Location=p, Offset=xs\<rparr>)) =
-    stack_disjoined i
+    stack_disjoint i
       (K (throw Err))
-      (\<lambda>p'. option_disjoined
+      (\<lambda>p'. option_disjoint
         (\<lambda>s. slookup xs (state.Storage s this p))
         (\<lambda>sd. memory_update_monad
           (\<lambda>m. read_storage_memory sd p' m \<bind>
@@ -495,7 +495,7 @@ where
       (throw Err)
       (\<lambda>p' xs'. case_list is
         (modify (stack_update i (kdata.Storage (Some \<lparr>Location=p, Offset= xs\<rparr>))) \<bind> K (return Empty))
-        (K (K (option_disjoined
+        (K (K (option_disjoint
           (\<lambda>s. slookup (xs @ is) (state.Storage s this p))
           (\<lambda>sd. storage_update_monad xs' [] (K sd) p')))))
       (modify (stack_update i (kdata.Storage (Some \<lparr>Location=p, Offset= xs\<rparr>))) \<bind> K (return Empty))"
@@ -519,16 +519,16 @@ section \<open>Storage Assignment\<close>
 fun (in Contract) assign_storage:: "id \<Rightarrow> ('a::address) valtype list \<Rightarrow> ('a::address) rvalue \<Rightarrow> ('a::address) expression_monad" where
   "assign_storage i is (rvalue.Value v) = storage_update_monad [] is (K (storage_data.Value v)) i"
 | "assign_storage i is (rvalue.Memory p) =
-    (option_disjoined
+    (option_disjoint
       (\<lambda>s. read_storage (state.Memory s) p)
       (\<lambda>sd. storage_update_monad [] is (K sd) i))"
 | "assign_storage i is (rvalue.Calldata (Some \<lparr>Location=p, Offset=xs\<rparr>)) =
-    (option_disjoined
+    (option_disjoint
       (\<lambda>s. state.Calldata s $$ p \<bind> clookup xs)
       (\<lambda>cd. storage_update_monad [] is (K (read_calldata_storage cd)) i))"
 | "assign_storage i is (rvalue.Calldata None) = throw Err"
 | "assign_storage i is (rvalue.Storage (Some \<lparr>Location=p, Offset=xs\<rparr>)) =
-    (option_disjoined
+    (option_disjoint
       (\<lambda>s. slookup xs (state.Storage s this p))
       (\<lambda>sd. storage_update_monad [] is (K sd) i))"
 | "assign_storage i is (rvalue.Storage None) = throw Err"

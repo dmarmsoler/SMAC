@@ -193,7 +193,7 @@ datatype 'v storage_data =
 | is_Array: Array (ar: "'v storage_data list")
 | is_Map: Map (mp: "'v \<Rightarrow> 'v storage_data")
 
-abbreviation storage_disjoined where "storage_disjoined sd vf af mf \<equiv> case_storage_data vf af mf sd"
+abbreviation storage_disjoint where "storage_disjoint sd vf af mf \<equiv> case_storage_data vf af mf sd"
 
 section \<open>Storage Lookup\<close>
 
