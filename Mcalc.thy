@@ -917,7 +917,7 @@ proof -
   ultimately show ?thesis using Memory.a_data.read_range[OF assms(3)] by blast
 qed
 
-subsection \<open>Memory Check\<close>
+subsection \<open>Disjointness\<close>
 
 lemma disjoined_range_write_1:
   assumes "Memory.write a m = (l, m')"
@@ -1125,6 +1125,8 @@ proof -
   then have "adisjoined m' (the (arange m l2))" using a_data.disjoined_disjoined[OF assms(4,2)] by blast
   then show ?thesis using * L_def by auto 
 qed
+
+subsection \<open>Value Array\<close>
 
 text \<open>Needs to be used manually\<close>
 lemma isValue_isArray_all:
