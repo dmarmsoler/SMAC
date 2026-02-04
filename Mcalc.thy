@@ -810,8 +810,8 @@ qed
 
 lemma read_mupdate_1:
   assumes "mupdate is1 (l1, v, m) = Some m'"
-      and "mlookup m is2 l2 = Some l2'"
-      and "m $ l2' = Some v"
+      and "mlookup m is2 l2 = Some l3"
+      and "m $ l3 = Some v"
       and "adisjoined m (the (arange m l1))"
       and "the (arange m l1) |\<inter>| the (arange m l2) = {||}"
       and "aread m l1 = Some a1"
@@ -822,7 +822,7 @@ proof-
     where l_def: "mlookup m is1 l1 = Some ll"
     and *: "ll < length m"
     and **: "m' = m[ll:=v]" using mvalue_update_obtain by metis
-  then have 0: "m' $ ll = m $ l2'" by (simp add: assms(3))
+  then have 0: "m' $ ll = m $ l3" by (simp add: assms(3))
   moreover have 1: "arange_safe {||} m l1 = Some (the (arange_safe {||} m l1))" using a_data.range_read_some
     by (metis assms(6) option.sel a_data.read_def)
   moreover have 2: "arange_safe {||} m ll = Some (the (arange_safe {||} m ll))"
@@ -837,12 +837,12 @@ proof-
     ultimately have "ll \<noteq> l'" by blast
     then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by (simp)
   qed
-  moreover have 5: "\<forall>l|\<in>|the (arange_safe {||} m l2'). m' $ l = m $ l"
+  moreover have 5: "\<forall>l|\<in>|the (arange_safe {||} m l3). m' $ l = m $ l"
   proof
-    fix ll' assume "ll'|\<in>| the (arange_safe {||} m l2')"
+    fix ll' assume "ll'|\<in>| the (arange_safe {||} m l3)"
     moreover have "ll |\<in>| the (arange_safe {||} m l1)"
       by (metis "1" data.range_safe_mlookup l_def arange_safe_def)
-    moreover have 3: "arange_safe {||} m l2'= Some (the (arange_safe {||} m l2'))"  using a_data.range_read_some
+    moreover have 3: "arange_safe {||} m l3= Some (the (arange_safe {||} m l3))"  using a_data.range_read_some
       by (metis assms(2,7) data.range_safe_mlookup data.range_safe_in_subs arange_safe_def option.sel a_data.read_def)
     ultimately have "ll \<noteq> ll'" using assms(5)
       by (smt (verit, ccfv_SIG) "3" assms(2,7) data.mlookup_range_safe_subs disjoint_iff_fnot_equal finsert_fsubset
@@ -852,28 +852,28 @@ proof-
   qed
   moreover have 6: "locations m is1 l1 = Some (the (locations m is1 l1))"
     by (simp add: l_def mlookup_locations_some)
-  moreover have 7: "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l2') = {||}"
+  moreover have 7: "the (locations m is1 l1) |\<inter>| the (arange_safe {||} m l3) = {||}"
   proof -
     have "the (locations m is1 l1) |\<subseteq>| the (arange m l1)"
       by (metis "1" "6" a_data.range_def a_data.range_safe_locations)
-    moreover have "the (arange_safe {||} m l2') |\<subseteq>| the (arange_safe {||} m l2)"
+    moreover have "the (arange_safe {||} m l3) |\<subseteq>| the (arange_safe {||} m l2)"
       by (metis "3" assms(2) option.sel a_data.range_def a_data.range_safe_mlookup_range)
     ultimately show ?thesis using assms(5)
       by (metis (no_types, lifting) ext boolean_algebra_cancel.inf1 inf.order_iff inf_bot_right inf_commute
           a_data.range_def)
   qed
-  moreover have 8: "ll |\<notin>| the (arange_safe {||} m l2')" using assms(5)
+  moreover have 8: "ll |\<notin>| the (arange_safe {||} m l3)" using assms(5)
   proof -
     have "ll |\<in>| the (arange_safe {||} m l1)"
       by (metis "1" data.range_safe_mlookup l_def arange_safe_def)
-    moreover have 3: "arange_safe {||} m l2'= Some (the (arange_safe {||} m l2'))"  using a_data.range_read_some
+    moreover have 3: "arange_safe {||} m l3= Some (the (arange_safe {||} m l3))"  using a_data.range_read_some
       by (metis assms(2,7) data.range_safe_mlookup data.range_safe_in_subs arange_safe_def option.sel a_data.read_def)
     ultimately show ?thesis using assms(5)
       by (smt (verit, ccfv_SIG) "3" assms(2,7) data.mlookup_range_safe_subs disjoint_iff_fnot_equal finsert_fsubset
           arange_safe_def mk_disjoint_finsert option.sel a_data.read_def a_data.range_read_some
           a_data.range_def)
   qed
-  moreover have "arange_safe {||} m l2'= Some (the (arange_safe {||} m l2'))"  using a_data.range_read_some
+  moreover have "arange_safe {||} m l3= Some (the (arange_safe {||} m l3))"  using a_data.range_read_some
       by (metis assms(2,7) data.range_safe_mlookup data.range_safe_in_subs arange_safe_def option.sel a_data.read_def)
   ultimately obtain cd' where 9: "aread_safe {||} m' l1 = Some cd'"
     using a_data.update_some_obtains_read[OF l_def 0 1 2 _ 4 5 _ _ _ 6 7 8] assms(4,6,7) 
@@ -884,7 +884,7 @@ proof-
     fix l' assume "l'|\<in>| the (arange_safe {||} m l2)"
     moreover have "ll |\<in>| the (arange_safe {||} m l1)"
       by (metis "1" data.range_safe_mlookup l_def arange_safe_def)
-    moreover have 3: "arange_safe {||} m l2'= Some (the (arange_safe {||} m l2'))"  using a_data.range_read_some
+    moreover have 3: "arange_safe {||} m l3= Some (the (arange_safe {||} m l3))"  using a_data.range_read_some
       by (metis assms(2,7) data.range_safe_mlookup data.range_safe_in_subs arange_safe_def option.sel a_data.read_def)
     ultimately have "ll \<noteq> l'" using assms(5) by (metis disjoint_iff_fnot_equal a_data.range_def)
     then show "m' $ l' = m $ l'" unfolding nth_safe_def using ** by (simp)
