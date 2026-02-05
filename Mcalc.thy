@@ -712,13 +712,10 @@ proof -
     using \<open>arange m' l1 = Some L0\<close> L1_def by auto
 qed
 
-subsection \<open>Memory Lookup and Memory Locations\<close>
-
-lemma mlookup_range_write_1:
+lemma nin_range_write_1:
   assumes "Memory.write a m = (l1, m')"
-      and "mlookup m is l2 = Some (the (mlookup m is l2))"
-      and "the (mlookup m is l2) \<in> loc m"
-    shows "the (mlookup m' is l2) |\<notin>| the (arange m' l1)"
+      and "l2 \<in> loc m"
+    shows "l2 |\<notin>| the (arange m' l1)"
 proof -
   from assms(1) obtain L where L_def: "arange m' l1 = Some L"
     using range_range_write_1 by blast
@@ -726,25 +723,20 @@ proof -
     by (metis Diff_disjoint Memory.write_loc assms(1) inf_commute write_arange option.sel s_disj_union_fs)
   moreover from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  with assms(2) have "the (mlookup m' is l2) = the (mlookup m is l2)"
-    by (metis mlookup_prefix_mlookup)
   ultimately show ?thesis using L_def assms by auto
 qed
 
-lemma mlookup_range_write_2:
+lemma nin_range_write_2:
   assumes "Memory.write a m = (l1, m')"
-      and "mlookup m is l2 = Some (the (mlookup m is l2))"
-      and "arange m l3 = Some (the (arange m l3))"
-      and "the (mlookup m is l2) |\<notin>| the (arange m l3)"
-    shows "the (mlookup m' is l2) |\<notin>| the (arange m' l3)"
+      and "arange m l2 = Some (the (arange m l2))"
+      and "l3 |\<notin>| the (arange m l2)"
+    shows "l3 |\<notin>| the (arange m' l2)"
 proof -
   from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  then have "the (mlookup m is l2) = the (mlookup m' is l2)"
-    by (metis assms(2) mlookup_prefix_mlookup)
-  moreover have "the (arange m l3) = the (arange m' l3)"
-    by (metis \<open>prefix m m'\<close> assms(3) a_data.range_prefix)
-  ultimately show ?thesis using assms(4) by simp
+  then have "the (arange m l2) = the (arange m' l2)"
+    by (metis \<open>prefix m m'\<close> assms(2) a_data.range_prefix)
+  then show ?thesis using assms(3) by simp
 qed
 
 subsection \<open>Write Memory\<close>
