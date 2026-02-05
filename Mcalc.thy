@@ -206,17 +206,17 @@ qed
 
 lemma mlookup_neq_write_2:
   assumes "Memory.write a m = (l, m')"
-      and "mlookup m' is1 l1 = Some l3"
+      and "mlookup m' is1 l1 = Some v"
       and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
       and "mlookup m is1 l1 = Some (the (mlookup m is1 l1))"
-      and "mlookup m is1 l1 = Some l3 \<Longrightarrow> the (mlookup m is2 l2) \<noteq> l3"
-    shows "the (mlookup m' is2 l2) \<noteq> l3"
+      and "mlookup m is1 l1 = Some v \<Longrightarrow> the (mlookup m is2 l2) \<noteq> v"
+    shows "the (mlookup m' is2 l2) \<noteq> v"
 proof -
   from assms(1) have *: "prefix m m'"
     by (metis write_sprefix snd_conv sprefix_prefix)
-  with assms(2,4) have "mlookup m is1 l1 = Some l3"
+  with assms(2,4) have "mlookup m is1 l1 = Some v"
     by (metis mlookup_prefix_mlookup)
-  with assms(5) have "the (mlookup m is2 l2) \<noteq> l3" by blast
+  with assms(5) have "the (mlookup m is2 l2) \<noteq> v" by blast
   with * show ?thesis
     by (metis assms(3) mlookup_prefix_mlookup)
 qed
