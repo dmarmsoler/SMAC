@@ -139,20 +139,7 @@ proof -
   then show ?thesis using assms(2) by argo
 qed
 
-subsection \<open>Memory Lookup\<close>
-
-lemma mlookup_mupdate:
-  assumes "mupdate is1 (l1, v, m) = Some m'"
-      and "mlookup m is2 l2 = Some l3"
-      and "locations m is2 l2 = Some (the (locations m is2 l2))"
-      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
-    shows "mlookup m' is2 l2 = Some l3"
-proof -
-  have m1_def: "m' = m[(the (mlookup m is1 l1)) := v]" using mvalue_update_obtain[OF assms(1)] by fastforce
-  then have "mlookup m' is2 l2 = mlookup m is2 l2" using mlookup_update_val[OF assms(2) assms(3) assms(4)]
-    by (simp add: assms(2))
-  then show ?thesis using assms(2) by simp
-qed
+subsection \<open>Rules for Memory Lookups\<close>
 
 lemma mlookup_some_write_1:
   assumes "Memory.write a m = (l, m')"
@@ -167,6 +154,19 @@ lemma mlookup_some_write_2:
     shows "mlookup m' is l2 = Some (the (mlookup m' is l2))"
   using assms
   by (metis write_sprefix mlookup_prefix_mlookup snd_conv sprefix_prefix)
+
+lemma mlookup_mupdate:
+  assumes "mupdate is1 (l1, v, m) = Some m'"
+      and "mlookup m is2 l2 = Some l3"
+      and "locations m is2 l2 = Some (the (locations m is2 l2))"
+      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
+    shows "mlookup m' is2 l2 = Some l3"
+proof -
+  have m1_def: "m' = m[(the (mlookup m is1 l1)) := v]" using mvalue_update_obtain[OF assms(1)] by fastforce
+  then have "mlookup m' is2 l2 = mlookup m is2 l2" using mlookup_update_val[OF assms(2) assms(3) assms(4)]
+    by (simp add: assms(2))
+  then show ?thesis using assms(2) by simp
+qed
 
 lemma mlookup_nth_mupdate:
   assumes "mupdate is (l, v, m) = Some m'"
@@ -310,7 +310,7 @@ lemma mlookup_nin_loc_write:
   using assms
   by (metis mlookup.simps(1) mlookup_neq_write_1)
 
-subsection \<open>Locations\<close>
+subsection \<open>Rules for Locations\<close>
 
 lemma locations_write_1:
   assumes "Memory.write a m = (l, m')"
@@ -530,7 +530,7 @@ proof -
   ultimately show ?thesis by (simp add: assms(11))
 qed
 
-subsection \<open>Memory Locations\<close>
+subsection \<open>Rules for Range\<close>
 
 lemma range_range_write_1:
   assumes "Memory.write a m = (l, m')"
@@ -546,20 +546,6 @@ proof -
     by (metis write_sprefix snd_eqD sprefix_prefix)
   then show ?thesis
     by (metis assms(2) a_data.range_prefix)
-qed
-
-lemma range_range_disj_write:
-  assumes "Memory.write a m = (l1, m')"
-    and "arange m l2 = Some (the (arange m l2))"
-  shows "the (arange m' l2) |\<inter>| the (arange m' l1) = {||}"
-proof -
-  from assms(1) have "prefix m m'"
-    by (metis write_sprefix snd_eqD sprefix_prefix)
-  moreover from assms(2) have "fset (the (arange m l2)) \<subseteq> loc m" using a_data.range_subs2 by auto
-  ultimately have "fset (the (arange m' l2)) \<subseteq> loc m"
-    by (metis assms(2) a_data.range_prefix)
-  then show ?thesis using write_arange[OF assms(1)] unfolding s_disj_fs_def pred_some_def
-    by auto
 qed
 
 lemma range_some_mupdate_value:
@@ -641,6 +627,20 @@ proof -
     using 0 m'_def unfolding nth_safe_def apply (simp split:if_split_asm)
     by (metis nth_list_update_neq)
   ultimately show ?thesis using a_data.range_same[of m l2] by (metis assms(3))
+qed
+
+lemma range_range_disj_write:
+  assumes "Memory.write a m = (l1, m')"
+    and "arange m l2 = Some (the (arange m l2))"
+  shows "the (arange m' l2) |\<inter>| the (arange m' l1) = {||}"
+proof -
+  from assms(1) have "prefix m m'"
+    by (metis write_sprefix snd_eqD sprefix_prefix)
+  moreover from assms(2) have "fset (the (arange m l2)) \<subseteq> loc m" using a_data.range_subs2 by auto
+  ultimately have "fset (the (arange m' l2)) \<subseteq> loc m"
+    by (metis assms(2) a_data.range_prefix)
+  then show ?thesis using write_arange[OF assms(1)] unfolding s_disj_fs_def pred_some_def
+    by auto
 qed
 
 lemma range_disj_write:
@@ -739,7 +739,7 @@ proof -
   then show ?thesis using assms(3) by simp
 qed
 
-subsection \<open>Write Memory\<close>
+subsection \<open>Rules for Read\<close>
 
 corollary write_read_1:
   assumes "Memory.write a m = (l, m')"
@@ -752,8 +752,6 @@ lemma write_read_2:
     shows "aread m' l1 = Some a1"
   using assms
   by (metis write_sprefix a_data.read_append snd_conv sprefix_prefix)
-
-subsection \<open>Read Memory\<close>
 
 lemma read_mupdate_value:
   assumes "mupdate is (l, mdata.Value v, m) = Some m'"
@@ -895,7 +893,7 @@ proof -
   ultimately show ?thesis using Memory.a_data.read_range[OF assms(3)] by blast
 qed
 
-subsection \<open>Disjointness\<close>
+subsection \<open>Rules for Disjointness\<close>
 
 lemma disjoint_range_write_1:
   assumes "Memory.write a m = (l, m')"
