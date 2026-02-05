@@ -563,14 +563,14 @@ proof -
 qed
 
 lemma range_range_disj_write:
-  assumes "Memory.write a m = (l2, m')"
-    and "arange m l1 = Some (the (arange m l1))"
-  shows "the (arange m' l1) |\<inter>| the (arange m' l2) = {||}"
+  assumes "Memory.write a m = (l1, m')"
+    and "arange m l2 = Some (the (arange m l2))"
+  shows "the (arange m' l2) |\<inter>| the (arange m' l1) = {||}"
 proof -
   from assms(1) have "prefix m m'"
     by (metis write_sprefix snd_eqD sprefix_prefix)
-  moreover from assms(2) have "fset (the (arange m l1)) \<subseteq> loc m" using a_data.range_subs2 by auto
-  ultimately have "fset (the (arange m' l1)) \<subseteq> loc m"
+  moreover from assms(2) have "fset (the (arange m l2)) \<subseteq> loc m" using a_data.range_subs2 by auto
+  ultimately have "fset (the (arange m' l2)) \<subseteq> loc m"
     by (metis assms(2) a_data.range_prefix)
   then show ?thesis using write_arange[OF assms(1)] unfolding s_disj_fs_def pred_some_def
     by auto
