@@ -28,7 +28,7 @@ lemma (in Contract) example:
   apply (auto simp add: pred_memory_def)
 
   (*Aliasing*)
-  apply (drule_tac ?xs1.0 = "[Uint 0]" and ?l1.0=l in aliasing, simp, simp)
+  apply (drule_tac ?xs1.0 = "[Uint 0]" and ?l1.0=l in aliasing_1, simp, simp)
   apply (erule mlookup_mupdate, simp)
   apply (erule locations_write_1, simp add:alookup.simps)
   apply (erule mlookup_locations_write_2, simp add:alookup.simps)
@@ -84,7 +84,7 @@ lemma (in Contract) example_short:
   apply (auto simp add: pred_memory_def)
 
   (*Aliasing*)
-  apply (drule_tac ?xs1.0 = "[Uint 0]" and ?l1.0=l in aliasing, simp, simp)
+  apply (drule_tac ?xs1.0 = "[Uint 0]" and ?l1.0=l in aliasing_1, simp, simp)
   apply (mc+, (auto simp add:alookup.simps)[1])+
   apply (rule pred_some_read)
   apply mc+

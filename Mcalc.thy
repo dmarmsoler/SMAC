@@ -100,7 +100,7 @@ lemma pred_some_read:
 
 text \<open>This destruction rule needs to be instantiated manually\<close>
 
-lemma aliasing:
+lemma aliasing_1:
   assumes "mupdate xs (l1, v, m) = Some m'"
       and "xs = xs1@ys"
       and "ys \<noteq> []"
@@ -111,7 +111,7 @@ lemma aliasing:
   using mlookup_append_same[OF assms(3,4,5,6)]
   by (metis assms(1,2) mupdate.simps)
 
-lemma aliasing2:
+lemma aliasing_2:
   assumes "mupdate xs (l1, v, m) = Some m'"
       and "xs = xs1@ys"
       and "ys \<noteq> []"
@@ -1155,8 +1155,8 @@ method mc uses lookup
   | (erule mlookup_loc_write_1, (slookup lookup: lookup)?)
   | (erule mlookup_loc_write_2)
   | (erule mlookup_nin_loc_write, solves\<open>simp\<close>)
-  | (erule mlookup_range_write_1)
-  | (erule mlookup_range_write_2)
+  | (erule nin_range_write_1)
+  | (erule nin_range_write_2)
   | (erule locations_write_1, (slookup lookup: lookup)?)
   | (erule locations_write_2)
   | (erule locations_mupdate)
