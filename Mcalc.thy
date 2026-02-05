@@ -220,17 +220,15 @@ qed
 lemma mlookup_neq_mupdate_2:
   assumes "mupdate is1 (l1, v1, m) = Some m'"
       and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
-      and "mlookup m is3 l3 = Some (the (mlookup m is3 l3))"
       and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
-      and "the (mlookup m is1 l1) |\<notin>| the (locations m is3 l3)"
-      and "the (mlookup m is3 l3) \<noteq> v2"
-    shows "the (mlookup m' is3 l3) \<noteq> v2"
+      and "the (mlookup m is2 l2) \<noteq> v2"
+    shows "the (mlookup m' is2 l2) \<noteq> v2"
 proof -
   obtain l
     where 0: "mlookup m is1 l1 = Some l"
     and m'_def: "m' = m[l:=v1]"
     using mvalue_update_obtain[OF assms(1)] by auto
-  then show ?thesis using assms(3,5,6)
+  then show ?thesis using assms(2,3,4)
     by (metis mlookup_locations_some mlookup_update_val option.sel)
 qed
 
@@ -1163,7 +1161,7 @@ method mc uses lookup
   | (erule mlookup_neq_write_1, solves\<open>simp\<close>)
   | (erule mlookup_neq_write_2)
   | (erule mlookup_neq_mupdate_1, assumption, assumption, solves\<open>simp\<close>)
-  | (erule mlookup_neq_mupdate_2, assumption, assumption, solves\<open>simp\<close>)
+  | (erule mlookup_neq_mupdate_2, assumption, solves\<open>simp\<close>)
   | (erule mlookup_loc_write_1, (slookup lookup: lookup)?)
   | (erule mlookup_loc_write_2)
   | (erule mlookup_nin_loc_write, solves\<open>simp\<close>)
