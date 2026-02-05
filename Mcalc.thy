@@ -187,10 +187,10 @@ qed
 
 lemma mlookup_neq_write_1:
   assumes "Memory.write a m = (l1, m')"
-      and "mlookup m' is1 l1 = Some l3"
+      and "mlookup m' is1 l1 = Some v"
       and "mlookup m is2 l2 = Some (the (mlookup m is2 l2))"
       and "the (mlookup m is2 l2) \<in> loc m"
-    shows "the (mlookup m' is2 l2) \<noteq> l3"
+    shows "the (mlookup m' is2 l2) \<noteq> v"
 proof -
   from assms(1) have "sprefix m m'" using write_sprefix by (metis snd_conv)
   then have "prefix m m'" using sprefix_prefix by auto
@@ -198,8 +198,8 @@ proof -
     where "arange_safe {||} m' l1 = Some L"
       and *: "fset L \<inter> loc m = {}"
       unfolding s_disj_fs_def pred_some_def Utils.s_union_fs_def pred_some_def unfolding arange_safe_def arange_def data.range_def by blast
-  then have "l3 |\<in>| L" using a_data.range_safe_mlookup assms(2) by blast
-  with * have "l3 \<notin> loc m" by blast
+  then have "v |\<in>| L" using a_data.range_safe_mlookup assms(2) by blast
+  with * have "v \<notin> loc m" by blast
   ultimately show ?thesis using assms(3,4)
     by (metis \<open>prefix m m'\<close> mlookup_prefix_mlookup)
 qed
