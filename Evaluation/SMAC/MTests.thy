@@ -428,7 +428,7 @@ lemma (in Contract)
   apply (auto simp add: pred_memory_def)
 
   (*Aliasing*)
-  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat j)]" and ?l1.0=la in aliasing, simp, simp)
+  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat j)]" and ?l1.0=la in aliasing_1, simp, simp)
   apply mc+
   using dlookup_array2[OF assms(2,4)] apply auto[1]
   apply mc+
@@ -514,7 +514,7 @@ lemma (in Contract)
   apply (auto simp add: pred_memory_def)
 
   (*Aliasing*)
-  apply (drule_tac ?xs = "[Uint (word_of_nat i), Uint (word_of_nat k)]" and ?xs1.0 = "[Uint (word_of_nat i)]" in aliasing2, simp, simp)
+  apply (drule_tac ?xs = "[Uint (word_of_nat i), Uint (word_of_nat k)]" and ?xs1.0 = "[Uint (word_of_nat i)]" in aliasing_2, simp, simp)
   apply mc+
   using dlookup_array2[OF assms(2,4)] apply auto[1]
   apply mc+
@@ -782,10 +782,10 @@ lemma (in Contract)
   apply wp+
   apply (auto simp add: pred_memory_def)
 
-  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat j)]" and ?l1.0=la and ?l2.0=x1 in aliasing, simp, simp)
+  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat j)]" and ?l1.0=la and ?l2.0=x1 in aliasing_1, simp, simp)
   apply (mc lookup: dlookup_array3[OF assms(2,5)] dlookup_array3[OF assms(1,4)])+
 
-  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat l), Uint (word_of_nat m)]" and ?l1.0=laa and ?l2.0=x1 in aliasing, simp, simp)
+  apply (drule_tac ?xs1.0 = "[Uint (word_of_nat l), Uint (word_of_nat m)]" and ?l1.0=laa and ?l2.0=x1 in aliasing_1, simp, simp)
   apply (mc lookup: dlookup_array3[OF assms(2,5)] dlookup_array3[OF assms(1,4)] dlookup_array4[OF assms(3,7,8)] dlookup_array4[OF assms(2,5,6)] dlookup_array4[OF assms(1,4,6)])+
 
   apply (rule pred_some_read)
