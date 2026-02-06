@@ -428,9 +428,9 @@ lemma mlookup_locations_mupdate_1:
       and "m $ l3 = Some v"
       and "is3 = i # is4"
       and "the (mlookup m is1 l1) |\<notin>| the (locations m is1 l1)"
-      and "locations m (is1 @ is3) l1 = Some (the (locations m (is1 @ is3) l1))"
+      and "\<And>y. mlookup m (is2 @ is3) l2 = Some y \<Longrightarrow> (mlookup m is1 l1) = Some (the (mlookup m is1 l1)) \<Longrightarrow> the ((mlookup m is1 l1)) \<noteq> y"
       and "the (mlookup m is1 l1) |\<notin>| the (locations m (is2 @ is3) l2)"
-      and "the (mlookup m (is2 @ is3) l2) |\<notin>| the (locations m (is1 @ is3) l1)"
+      and "mlookup m (is2 @ is3) l2 = Some (the (mlookup m (is2 @ is3) l2)) \<Longrightarrow> the (mlookup m (is2 @ is3) l2) |\<notin>| (the (locations m is1 l1))"
       and "mlookup m (is2 @ is3) l2 = Some (the (mlookup m (is2 @ is3) l2))"
       and "the (mlookup m (is2 @ is3) l2) |\<notin>| the (locations m (is2 @ is3) l2)"
     shows "the (mlookup m' (is1 @ is3) l1) |\<notin>| the (locations m' (is1 @ is3) l1)"
@@ -497,13 +497,10 @@ proof -
     ultimately show ?thesis using mlookup_mlookup_mlookup[OF 3, of m' l3 is3 ll] \<open>m $ l3 = m' $ l\<close> ** assms(4)
       by (simp add: assms(2) mlookup_append)
   qed
-  moreover from assms(4,6)
-    have "(finsert l (the (locations m is1 l1)) |\<subseteq>| the (locations m (is1 @ is3) l1))"
-    by (metis "3" * finsert_fsubset list.distinct(1) locations_append_subset mlookup_in_locations
-        option.inject)
-  moreover from assms(10)
-    have "the (locations m is4 (the (mlookup m [i] l3))) |\<subseteq>| the (locations m (is2 @ is3) l2)"
-      using L''_def 1 2 by auto
+  moreover from assms have "the (mlookup m (is2 @ is3) l2) |\<notin>| (finsert l (the (locations m is1 l1)))" 
+    using "3" by force
+  moreover have "the (mlookup m (is2 @ is3) l2) |\<notin>| the (locations m is4 (the (mlookup m [i] l3)))"
+    using "1" "2" L''_def assms(10) by auto
   ultimately show ?thesis using assms(8,10) by auto
 qed
 
