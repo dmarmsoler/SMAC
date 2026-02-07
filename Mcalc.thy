@@ -512,7 +512,6 @@ lemma mlookup_locations_mupdate_2:
       and "m $ l3 = Some v"
       and "is3 \<noteq> []"
       and "the (mlookup m is1 l1) |\<notin>| the (locations m is1 l1)"
-      and "the (mlookup m is1 l1) |\<notin>| the (locations m is2 l2)"
       and "locations m is4 l4 = Some (the (locations m is4 l4))"
       and "the (mlookup m is1 l1) |\<notin>| the (locations m is4 l4)"
       and "mlookup m (is2 @ is3) l2 = Some (the (mlookup m (is2 @ is3) l2))"
@@ -530,17 +529,18 @@ proof -
   then have **: "mlookup m' is1 l1 = Some l" using m'_def
     by (metis "0" assms(1) mlookup_locations_some mlookup_mupdate option.sel)
   moreover have "mlookup m' is2 l2 = Some (the (mlookup m is2 l2))" using assms
-    by (simp add: mlookup_locations_some mlookup_mupdate)
+    by (metis funion_iff locations_app_mlookup_exists mlookup_locations_some mlookup_mupdate
+        option.sel)
   then have ***: "mlookup m' is2 l2 \<bind> ($) m' = Some v" using assms(1,2)
     by (metis "*" "0" assms(3) bind.bind_lunit nth_some option.sel)
   ultimately have "mlookup m' (is1 @ is3) l1 = mlookup m' (is2 @ is3) l2" using mlookup_append_same[OF assms(4) ** * ***] by simp
-  moreover from assms(9,10) 0 m'_def have "mlookup m' (is2 @ is3) l2 = mlookup m (is2 @ is3) l2"
+  moreover from assms(8,9) 0 m'_def have "mlookup m' (is2 @ is3) l2 = mlookup m (is2 @ is3) l2"
     by (metis mlookup_locations_some mlookup_update_val option.sel)
   moreover from assms(7,8) 0 m'_def have "\<forall>l|\<in>|the (locations m is4 l4). m' $ l = m $ l" unfolding nth_safe_def apply (auto)
     by (metis nth_list_update_neq)
-  with assms(7,8) 0 m'_def have "the (locations m' is4 l4) = the (locations m is4 l4)"
+  with assms(6,7) 0 m'_def have "the (locations m' is4 l4) = the (locations m is4 l4)"
     by (metis locations_same)
-  ultimately show ?thesis by (simp add: assms(11))
+  ultimately show ?thesis by (simp add: assms(10))
 qed
 
 subsection \<open>Rules for Range\<close>
